@@ -1,4 +1,5 @@
 import re
+from itertools import islice
 from urllib.error import HTTPError
 
 import requests
@@ -32,8 +33,8 @@ def search_google(question, num_results):
     # return result["items"]
 
     try:
-        results = search(question, num=num_results)
-        return [next(results) for _ in range(num_results)]
+        results = search(question)
+        return list(islice(results, num_results))
     except HTTPError as http_err:
         print(http_err.headers)  # Dump the headers to see if there's more information
         print(http_err.read())

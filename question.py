@@ -1,9 +1,16 @@
 import re
 import time
+from multiprocessing import cpu_count
+
+from joblib import Parallel, delayed
 
 import search
 
 punctuation_to_none = str.maketrans({key: None for key in "!\"#$%&\'()*+,-.:;<=>?@[\\]^_`{|}~"})
+
+
+def get_no_punctuation_text(url):
+    return search.get_text(url).translate(punctuation_to_none)
 
 
 def answer_question(question, answers):
@@ -12,25 +19,23 @@ def answer_question(question, answers):
 
     answers = list(map(lambda x: x.translate(punctuation_to_none), answers))
 
-    reverse = "NOT" in question or "least" in question.lower()
+    reverse = "NOT" in question or ("least" in question.lower() and "at least" not in question.lower())
     question_keywords = search.find_keywords(question)
     print(question_keywords)
-    search_results = search.search_google(" ".join(question_keywords), 3)
+    search_results = search.search_google(" ".join(question_keywords), 5)
     print(search_results)
-    search_text = []
 
-    for url in search_results:
-        text = search.get_text(url).translate(punctuation_to_none)
-        print(text)
-        search_text.append(text)
+    # Parallelize access of found URLs
+    search_text = Parallel(n_jobs=cpu_count())(
+        delayed(get_no_punctuation_text)(url) for url in search_results)
 
-    best_answer = search_method1(search_text, answers, reverse)
-    best_answer = best_answer if best_answer != "" else search_method2(search_text, answers, reverse)
+    best_answer = __search_method1(search_text, answers, reverse)
+    best_answer = best_answer if best_answer != "" else __search_method2(search_text, answers, reverse)
     print("Search took {} seconds".format(time.time() - start))
     return best_answer
 
 
-def search_method1(texts, answers, reverse):
+def __search_method1(texts, answers, reverse):
     """
     Returns the answer with the maximum/minimum number of exact occurrences in the texts.
     :param texts: List of text to analyze
@@ -55,7 +60,7 @@ def search_method1(texts, answers, reverse):
         return ""
 
 
-def search_method2(texts, answers, reverse):
+def __search_method2(texts, answers, reverse):
     """
     Return the answer with the maximum/minimum number of keyword occurrences in the texts.
     :param texts: List of text to analyze
@@ -75,13 +80,4 @@ def search_method2(texts, answers, reverse):
     counts_sum = {answer: sum(keyword_counts.values()) for answer, keyword_counts in counts.items()}
     return min(counts_sum, key=counts_sum.get) if reverse else max(counts_sum, key=counts_sum.get)
 
-
-def search_method3(answers, question_keywords, reverse):
-    """
-    Returns the answer whose search results appear most often
-    :param answers:
-    :param question_keywords:
-    :param reverse:
-    :return:
-    """
 
