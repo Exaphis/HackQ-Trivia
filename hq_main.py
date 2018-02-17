@@ -51,35 +51,36 @@ def on_close(ws):
     print("Socket closed.")
 
 
-while True:
-    print("")
-    response = requests.get("https://api-quiz.hype.space/shows/now?type=hq&userId=" + USER_ID, headers=headers)
-    # Strip control characters in the API response
-    response_text = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", response.text)
-    try:
-        response_data = json.loads(response_text)
-    except json.decoder.JSONDecodeError:
-        print("Server response not JSON, retrying in 30 seconds.")
-        sleep(30)
-        continue
+if __name__ == "__main__":
+    while True:
+        print("")
+        response = requests.get("https://api-quiz.hype.space/shows/now?type=hq&userId=" + USER_ID, headers=headers)
+        # Strip control characters in the API response
+        response_text = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", response.text)
+        try:
+            response_data = json.loads(response_text)
+        except json.decoder.JSONDecodeError:
+            print("Server response not JSON, retrying in 30 seconds.")
+            sleep(30)
+            continue
 
-    log.write("{} {} \n".format(datetime.now(), response_data))
-    # print(response_data)
+        log.write("{} {} \n".format(datetime.now(), response_data))
+        # print(response_data)
 
-    if "broadcast" not in response_data or response_data["broadcast"] is None:
-        print("Show not on.")
-        next_time = datetime.strptime(response_data["nextShowTime"], "%Y-%m-%dT%H:%M:%S.000Z")
-        print("Next show time: {}".format((next_time - timedelta(hours=5)).strftime("%Y-%m-%d %I:%M %p")))
-        print("Prize: " + response_data["nextShowPrize"])
-        sleep(1)
-    elif hq_socket is None:
-        # print("Show active, connecting to socket.")
-        hq_socket_url = response_data["broadcast"]["socketUrl"].replace("https", "wss")
+        if "broadcast" not in response_data or response_data["broadcast"] is None:
+            print("Show not on.")
+            next_time = datetime.strptime(response_data["nextShowTime"], "%Y-%m-%dT%H:%M:%S.000Z")
+            print("Next show time: {}".format((next_time - timedelta(hours=5)).strftime("%Y-%m-%d %I:%M %p")))
+            print("Prize: " + response_data["nextShowPrize"])
+            sleep(1)
+        elif hq_socket is None:
+            # print("Show active, connecting to socket.")
+            hq_socket_url = response_data["broadcast"]["socketUrl"].replace("https", "wss")
 
-        hq_socket = websocket.WebSocketApp(hq_socket_url,
-                                           on_message=on_message,
-                                           on_error=on_error,
-                                           on_close=on_close,
-                                           header=headers)
-        hq_socket.run_forever()
-        hq_socket = None
+            hq_socket = websocket.WebSocketApp(hq_socket_url,
+                                               on_message=on_message,
+                                               on_error=on_error,
+                                               on_close=on_close,
+                                               header=headers)
+            hq_socket.run_forever()
+            hq_socket = None

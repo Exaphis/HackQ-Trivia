@@ -1,15 +1,17 @@
 import re
-from itertools import islice
-from urllib.error import HTTPError
 
 import requests
-from googlesearch import search
+from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
 from nltk.tokenize import RegexpTokenizer
 from requests.exceptions import Timeout
 
 STOP = set(stopwords.words("english"))
 tokenizer = RegexpTokenizer(r"\w+")
+HEADER = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:58.0) Gecko/20100101 Firefox/58.0",
+          "Accept": "*/*",
+          "Accept-Language": "en-US,en;q=0.5",
+          "Accept-Encoding": "gzip, deflate"}
 
 
 def find_keywords(words):
@@ -32,13 +34,12 @@ def search_google(question, num_results):
     # result = service.cse().list(q=question, cx=CSE_ID, num=num_results).execute()
     # return result["items"]
 
-    try:
-        results = search(question)
-        return list(islice(results, num_results))
-    except HTTPError as http_err:
-        print(http_err.headers)  # Dump the headers to see if there's more information
-        print(http_err.read())
-        exit()
+    page = requests.get("https://www.google.com/search?q={}&ie=utf-8&oe=utf-8&client=firefox-b-1-ab"
+                        .format(question))
+    soup = BeautifulSoup(page.content, "html.parser")
+    results = list(map(str, soup.findAll("h3", {"class": "r"})))
+    links = [r[30:r.index("&amp;sa=U")] for r in results if "/url?q=" in r and "class=\"sla\"" not in r]
+    return links[:num_results]
 
 
 def clean_html(html):

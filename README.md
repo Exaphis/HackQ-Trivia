@@ -4,7 +4,7 @@ Yet another HQ trivia bot, in Python. Automatically scrapes HQ Trivia questions 
 ## Getting Started
 ### Dependencies
 ```
-google
+bs4
 nltk
 requests
 websocket
