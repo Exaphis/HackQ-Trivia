@@ -4,7 +4,6 @@ import requests
 from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
 from nltk.tokenize import RegexpTokenizer
-from requests.exceptions import Timeout
 
 STOP = set(stopwords.words("english"))
 tokenizer = RegexpTokenizer(r"\w+")
@@ -76,5 +75,6 @@ def get_text(url):
     try:
         page_text = requests.get(url, timeout=1.5).text
         return clean_html(page_text).lower()
-    except Timeout:
+    except:
+        print("Connection error/timeout to " + url)
         return ""

@@ -6,7 +6,7 @@ from joblib import Parallel, delayed
 
 import search
 
-punctuation_to_none = str.maketrans({key: None for key in "!\"#$%&\'()*+,-.:;<=>?@[\\]^_`{|}~"})
+punctuation_to_none = str.maketrans({key: None for key in "!\"#$%&\'()*+,-.:;<=>?@[\\]^_`{|}~�"})
 
 
 def get_no_punctuation_text(url):

@@ -8,6 +8,7 @@ bs4
 nltk
 requests
 websocket
+websocket-client
 joblib
 ```
 ### Installation
