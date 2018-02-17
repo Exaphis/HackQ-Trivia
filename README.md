@@ -7,7 +7,6 @@ Yet another HQ trivia bot, in Python. Automatically scrapes HQ Trivia questions 
 bs4
 nltk
 requests
-websocket
 websocket-client
 joblib
 ```
@@ -16,7 +15,12 @@ joblib
 git clone https://github.com/Exaphis/HackQ-Trivia.git
 cd HackQ-Trivia
 ```
-Enter your bearer token and user ID in the conn_settings.txt file.
+In Python 3, run:
+```
+import nltk
+nltk.download("stopwords")
+```
+Enter your bearer token and user ID in the conn_settings.txt file. These values can be found by sniffing the traffic on your phone. The bearer token should be one line, without the word Bearer.
 
 ### Usage
 ```
