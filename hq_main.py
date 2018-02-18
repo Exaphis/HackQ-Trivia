@@ -19,7 +19,7 @@ def on_message(ws, message):
     if message_data["type"] == "question" and "answers" in message_data:
         question_s = message_data["question"]
         answers = list(map(lambda x: x["text"], message_data["answers"]))
-
+        answers = [ans for ans in answers if ans != "" or ans != " "]
         print("\n" * 5)
         print("Question detected.")
         print(question_s)

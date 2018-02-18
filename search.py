@@ -37,7 +37,7 @@ def search_google(question, num_results):
                         .format(question))
     soup = BeautifulSoup(page.content, "html.parser")
     results = list(map(str, soup.findAll("h3", {"class": "r"})))
-    links = [r[30:r.index("&amp;sa=U")] for r in results if "/url?q=" in r and "class=\"sla\"" not in r]
+    links = [r[r.index("/url?q=")+7:r.index("&amp;sa=U")] for r in results if "/url?q=" in r and "class=\"sla\"" not in r]
     return links[:num_results]
 
 
