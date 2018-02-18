@@ -50,9 +50,13 @@ if __name__ == "__main__":
 
     print("getting")
 
-    headers = {"User-Agent": "hq-scraper/1.2.4 (iPhone; iOS 11.1.1; Scale/3.00)",
+    headers = {"x-hq-client": "Android/1.1.3",
                "Authorization": "Bearer " + BEARER_TOKEN,
-               "x-hq-client": "iOS/1.2.4 b59"}
+               "x-hq-stk": "MQ==",
+               "Host": "api-quiz.hype.space",
+               "Connection": "Keep-Alive",
+               "Accept-Encoding": "gzip",
+               "User-Agent": "okhttp/3.8.0"}
     hq_socket = None
 
     while True:
