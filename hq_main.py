@@ -11,9 +11,9 @@ import websockets
 import question
 
 
-async def websocket_handler(uri):
+async def websocket_handler(uri, socket_headers):
     try:
-        async with websockets.connect(uri) as websocket:
+        async with websockets.connect(uri, extra_headers=socket_headers) as websocket:
             async for message in websocket:
                 # Remove control characters in the WebSocket message
                 message = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", message)
@@ -34,7 +34,8 @@ async def websocket_handler(uri):
                 elif message_data["type"] == "broadcastEnded" and "reason" not in message_data:
                     print("Broadcast ended.")
     except websockets.ConnectionClosed:
-        print("Socket closed.")
+        pass
+    print("Socket closed.")
 
 
 if __name__ == "__main__":
@@ -80,4 +81,4 @@ if __name__ == "__main__":
         else:
             socket = response_data["broadcast"]["socketUrl"].replace("https", "wss")
             print("Show active, connecting to socket at {}".format(socket))
-            asyncio.get_event_loop().run_until_complete(websocket_handler(socket))
+            asyncio.get_event_loop().run_until_complete(websocket_handler(socket, headers))
