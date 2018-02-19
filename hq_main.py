@@ -22,13 +22,11 @@ async def websocket_handler(uri, socket_headers):
 
                 if message_data["type"] == "question" and "answers" in message_data:
                     question_s = message_data["question"]
-                    answers = list(map(lambda x: x["text"], message_data["answers"]))
-                    answers = [ans for ans in answers if ans != "" or ans != " "]
+                    answers = [ans["text"] for ans in message_data["answers"] if ans["text"].strip() != ""]
                     print("\n" * 5)
                     print("Question detected.")
                     print(question_s)
                     print(answers)
-                    # print(message_data)
                     print()
                     print(question.answer_question(question_s, answers))
                 elif message_data["type"] == "broadcastEnded" and "reason" not in message_data:

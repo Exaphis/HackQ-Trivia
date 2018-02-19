@@ -19,7 +19,7 @@ def find_keywords(words):
     :param words: List of words
     :return: Words without stopwords
     """
-    return list(filter(lambda w: w not in STOP, tokenizer.tokenize(words.lower())))
+    return [w for w in tokenizer.tokenize(words.lower()) if w not in STOP]
 
 
 def search_google(question, num_results):

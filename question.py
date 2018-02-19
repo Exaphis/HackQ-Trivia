@@ -18,7 +18,7 @@ def answer_question(question, answers):
     print("Searching")
     start = time.time()
 
-    answers = list(map(lambda x: x.translate(punctuation_to_none), answers))
+    answers = [ans.translate(punctuation_to_none) for ans in answers]
 
     reverse = "NOT" in question or ("least" in question.lower() and "at least" not in question.lower())
     question_keywords = search.find_keywords(question)
