@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import re
@@ -5,38 +6,35 @@ from datetime import datetime, timedelta
 from time import sleep
 
 import requests
-import websocket
+import websockets
 
 import question
 
 
-def on_message(ws, message):
-    # Remove control characters in the WebSocket message
-    message = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", message)
-    message_data = json.loads(message)
-    logging.info(str(message_data))
+async def websocket_handler(uri):
+    try:
+        async with websockets.connect(uri) as websocket:
+            async for message in websocket:
+                # Remove control characters in the WebSocket message
+                message = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", message)
+                message_data = json.loads(message)
+                logging.info(str(message_data))
 
-    if message_data["type"] == "question" and "answers" in message_data:
-        question_s = message_data["question"]
-        answers = list(map(lambda x: x["text"], message_data["answers"]))
-        answers = [ans for ans in answers if ans != "" or ans != " "]
-        print("\n" * 5)
-        print("Question detected.")
-        print(question_s)
-        print(answers)
-        # print(message_data)
-        print()
-        print(question.answer_question(question_s, answers))
-    elif message_data["type"] == "broadcastEnded" and "reason" not in message_data:
-        print("Broadcast ended.")
-
-
-def on_error(ws, error):
-    print(error)
-
-
-def on_close(ws):
-    print("Socket closed.")
+                if message_data["type"] == "question" and "answers" in message_data:
+                    question_s = message_data["question"]
+                    answers = list(map(lambda x: x["text"], message_data["answers"]))
+                    answers = [ans for ans in answers if ans != "" or ans != " "]
+                    print("\n" * 5)
+                    print("Question detected.")
+                    print(question_s)
+                    print(answers)
+                    # print(message_data)
+                    print()
+                    print(question.answer_question(question_s, answers))
+                elif message_data["type"] == "broadcastEnded" and "reason" not in message_data:
+                    print("Broadcast ended.")
+    except websockets.ConnectionClosed:
+        print("Socket closed.")
 
 
 if __name__ == "__main__":
@@ -57,7 +55,6 @@ if __name__ == "__main__":
                "Connection": "Keep-Alive",
                "Accept-Encoding": "gzip",
                "User-Agent": "okhttp/3.8.0"}
-    hq_socket = None
 
     while True:
         print("")
@@ -80,14 +77,7 @@ if __name__ == "__main__":
             print("Next show time: {}".format((next_time - timedelta(hours=5)).strftime("%Y-%m-%d %I:%M %p")))
             print("Prize: " + response_data["nextShowPrize"])
             sleep(1)
-        elif hq_socket is None:
-            # print("Show active, connecting to socket.")
-            hq_socket_url = response_data["broadcast"]["socketUrl"].replace("https", "wss")
-
-            hq_socket = websocket.WebSocketApp(hq_socket_url,
-                                               on_message=on_message,
-                                               on_error=on_error,
-                                               on_close=on_close,
-                                               header=headers)
-            hq_socket.run_forever()
-            hq_socket = None
+        else:
+            socket = response_data["broadcast"]["socketUrl"].replace("https", "wss")
+            print("Show active, connecting to socket at {}".format(socket))
+            asyncio.get_event_loop().run_until_complete(websocket_handler(socket))
