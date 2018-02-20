@@ -32,7 +32,7 @@ def answer_question(question, answers):
     best_answer = __search_method1(search_text, answers, reverse)
     if best_answer == "":
         best_answer = __search_method2(search_text, answers, reverse)
-        # best_answer = __search_method3(question_keywords, answers, reverse)
+    print(__search_method3(question_keywords, answers, reverse))
 
     print("Search took {} seconds".format(time.time() - start))
     return best_answer
