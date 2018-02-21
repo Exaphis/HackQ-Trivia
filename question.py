@@ -1,17 +1,10 @@
 import itertools
 import re
 import time
-from multiprocessing import cpu_count
-
-from joblib import Parallel, delayed
 
 import search
 
 punctuation_to_none = str.maketrans({key: None for key in "!\"#$%&\'()*+,-.:;<=>?@[\\]^_`{|}~�"})
-
-
-def get_no_punctuation_text(url):
-    return search.get_text(url).translate(punctuation_to_none)
 
 
 def answer_question(question, answers):
@@ -23,12 +16,12 @@ def answer_question(question, answers):
     reverse = "NOT" in question or ("least" in question.lower() and "at least" not in question.lower())
     question_keywords = search.find_keywords(question)
     print(question_keywords)
-    search_results = search.search_google(" ".join(question_keywords), 5)
+    search_results = search.search_google("+".join(question_keywords), 5)
     print(search_results)
 
     # Parallelize access of found URLs
-    search_text = Parallel(n_jobs=cpu_count())(delayed(get_no_punctuation_text)(url) for url in search_results)
-
+    search_text = [x.translate(punctuation_to_none) for x in search.get_texts(search_results)]
+    # print("\n".join(search_text))
     best_answer = __search_method1(search_text, answers, reverse)
     if best_answer == "":
         best_answer = __search_method2(search_text, answers, reverse)
@@ -94,12 +87,12 @@ def __search_method3(question_keywords, answers, reverse):
     :return: Answer whose search results contain the most keywords of the question
     """
     print("Running method 3")
-    search_results = Parallel(n_jobs=cpu_count())(delayed(search.search_google)(ans, 3) for ans in answers)
+    search_results = search.multiple_search(answers, 3)
 
     answer_lengths = list(map(len, search_results))
     search_results = itertools.chain.from_iterable(search_results)
 
-    texts = Parallel(n_jobs=cpu_count())(delayed(get_no_punctuation_text)(url) for url in search_results)
+    texts = [x.translate(punctuation_to_none) for x in search.get_texts(search_results)]
 
     answer_text_map = {}
     for idx, length in enumerate(answer_lengths):

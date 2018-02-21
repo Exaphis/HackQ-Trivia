@@ -56,7 +56,7 @@ if __name__ == "__main__":
                "User-Agent": "okhttp/3.8.0"}
 
     while True:
-        print("")
+        print()
         response = requests.get("https://api-quiz.hype.space/shows/now?type=hq&userId=" + USER_ID, headers=headers)
         # Strip control characters in the API response
         response_text = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", response.text)
