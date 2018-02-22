@@ -15,6 +15,7 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:58.0) Gec
            "Accept": "*/*",
            "Accept-Language": "en-US,en;q=0.5",
            "Accept-Encoding": "gzip, deflate"}
+search_loop = asyncio.new_event_loop()
 
 
 def find_keywords(words):
@@ -108,8 +109,13 @@ async def run(urls, timeout):
 
 
 def get_texts(urls, clean=True, timeout=1.5):
+    old = asyncio.get_event_loop()
+    asyncio.set_event_loop(search_loop)
+
     future = asyncio.ensure_future(run(urls, timeout))
-    responses = asyncio.get_event_loop().run_until_complete(future)
+    responses = search_loop.run_until_complete(future)
+
+    asyncio.set_event_loop(old)
     if clean:
         responses = [html.unescape(clean_html(r).lower()) for r in responses]
     return responses
