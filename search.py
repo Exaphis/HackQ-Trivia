@@ -27,7 +27,7 @@ def find_keywords(words):
     return [w for w in tokenizer.tokenize(words.lower()) if w not in STOP]
 
 
-def search_google(question, num_results):
+async def search_google(question, num_results):
     """
     Returns num_results urls from a google search of question.
     :param question: Question to search
@@ -38,8 +38,9 @@ def search_google(question, num_results):
     # result = service.cse().list(q=question, cx=CSE_ID, num=num_results).execute()
     # return result["items"]
 
-    page = get_texts(["https://www.google.com/search?q={}&ie=utf-8&oe=utf-8&client=firefox-b-1-ab".format(question)],
-                     clean=False, timeout=5)[0]
+    pages = await get_texts(["https://www.google.com/search?q={}&ie=utf-8&oe=utf-8&client=firefox-b-1-ab".format(question)],
+                            clean=False, timeout=5)
+    page = pages[0]
     soup = BeautifulSoup(page, "html.parser")
     results = soup.findAll("h3", {"class": "r"})
     links = [str(r.find("a")["href"]) for r in results]
@@ -47,10 +48,10 @@ def search_google(question, num_results):
     return links[:num_results]
 
 
-def multiple_search(questions, num_results):
+async def multiple_search(questions, num_results):
     queries = ["https://www.google.com/search?q={}&ie=utf-8&oe=utf-8&client=firefox-b-1-ab".format(q)
                for q in questions]
-    pages = get_texts(queries, clean=False, timeout=5)
+    pages = await get_texts(queries, clean=False, timeout=5)
     link_list = []
     for page in pages:
         soup = BeautifulSoup(page, "html.parser")
@@ -108,14 +109,9 @@ async def run(urls, timeout):
         return responses
 
 
-def get_texts(urls, clean=True, timeout=1.5):
-    old = asyncio.get_event_loop()
-    asyncio.set_event_loop(search_loop)
+async def get_texts(urls, clean=True, timeout=1.5):
+    responses = await run(urls, timeout)
 
-    future = asyncio.ensure_future(run(urls, timeout))
-    responses = search_loop.run_until_complete(future)
-
-    asyncio.set_event_loop(old)
     if clean:
         responses = [html.unescape(clean_html(r).lower()) for r in responses]
     return responses

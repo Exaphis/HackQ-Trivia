@@ -28,7 +28,7 @@ async def websocket_handler(uri, socket_headers):
                     print(question_s)
                     print(answers)
                     print()
-                    print(question.answer_question(question_s, answers))
+                    print(await question.answer_question(question_s, answers))
                 elif message_data["type"] == "broadcastEnded" and "reason" not in message_data:
                     print("Broadcast ended.")
     except websockets.ConnectionClosed:

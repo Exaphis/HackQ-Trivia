@@ -7,7 +7,7 @@ import search
 punctuation_to_none = str.maketrans({key: None for key in "!\"#$%&\'()*+,-.:;<=>?@[\\]^_`{|}~�"})
 
 
-def answer_question(question, answers):
+async def answer_question(question, answers):
     print("Searching")
     start = time.time()
 
@@ -16,23 +16,25 @@ def answer_question(question, answers):
     reverse = "NOT" in question or ("least" in question.lower() and "at least" not in question.lower())
     question_keywords = search.find_keywords(question)
     print(question_keywords)
-    search_results = search.search_google("+".join(question_keywords), 5)
+    search_results = await search.search_google("+".join(question_keywords), 5)
     print(search_results)
 
     # Parallelize access of found URLs
-    search_text = [x.translate(punctuation_to_none) for x in search.get_texts(search_results)]
+    search_text = [x.translate(punctuation_to_none) for x in await search.get_texts(search_results)]
     # print("\n".join(search_text))
-    best_answer = __search_method1(search_text, answers, reverse)
+    best_answer = await __search_method1(search_text, answers, reverse)
     if best_answer == "":
-        best_answer = __search_method2(search_text, answers, reverse)
+        best_answer = await __search_method2(search_text, answers, reverse)
     print(best_answer + "\n")
-    print(__search_method3(question_keywords, answers, reverse))
+
+    answer3 = await __search_method3(question_keywords, answers, reverse)
+    print(answer3)
 
     print("Search took {} seconds".format(time.time() - start))
     return ""
 
 
-def __search_method1(texts, answers, reverse):
+async def __search_method1(texts, answers, reverse):
     """
     Returns the answer with the maximum/minimum number of exact occurrences in the texts.
     :param texts: List of text to analyze
@@ -57,7 +59,7 @@ def __search_method1(texts, answers, reverse):
         return ""
 
 
-def __search_method2(texts, answers, reverse):
+async def __search_method2(texts, answers, reverse):
     """
     Return the answer with the maximum/minimum number of keyword occurrences in the texts.
     :param texts: List of text to analyze
@@ -78,7 +80,7 @@ def __search_method2(texts, answers, reverse):
     return min(counts_sum, key=counts_sum.get) if reverse else max(counts_sum, key=counts_sum.get)
 
 
-def __search_method3(question_keywords, answers, reverse):
+async def __search_method3(question_keywords, answers, reverse):
     """
     Returns the answer with the maximum number of occurrences of the question keywords in its searches.
     :param question_keywords: Keywords of the question
@@ -87,12 +89,12 @@ def __search_method3(question_keywords, answers, reverse):
     :return: Answer whose search results contain the most keywords of the question
     """
     print("Running method 3")
-    search_results = search.multiple_search(answers, 3)
+    search_results = await search.multiple_search(answers, 3)
 
     answer_lengths = list(map(len, search_results))
     search_results = itertools.chain.from_iterable(search_results)
 
-    texts = [x.translate(punctuation_to_none) for x in search.get_texts(search_results)]
+    texts = [x.translate(punctuation_to_none) for x in await search.get_texts(search_results)]
 
     answer_text_map = {}
     for idx, length in enumerate(answer_lengths):
