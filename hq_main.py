@@ -5,10 +5,10 @@ import re
 from datetime import datetime, timedelta
 from time import sleep
 
-import requests
 import websockets
 
 import question
+import search
 
 
 async def websocket_handler(uri, socket_headers):
@@ -18,7 +18,7 @@ async def websocket_handler(uri, socket_headers):
                 # Remove control characters in the WebSocket message
                 message = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", message)
                 message_data = json.loads(message)
-                logging.info(str(message_data))
+                logging.info(message_data)
 
                 if message_data["type"] == "question" and "answers" in message_data:
                     question_s = message_data["question"]
@@ -46,7 +46,7 @@ if __name__ == "__main__":
         USER_ID = conn_settings.readline().strip().split("=")[1]
 
     print("getting")
-
+    main_url = "https://api-quiz.hype.space/shows/now?type=hq&userId={}".format(USER_ID)
     headers = {"x-hq-client": "Android/1.1.3",
                "Authorization": "Bearer " + BEARER_TOKEN,
                "x-hq-stk": "MQ==",
@@ -57,9 +57,11 @@ if __name__ == "__main__":
 
     while True:
         print()
-        response = requests.get("https://api-quiz.hype.space/shows/now?type=hq&userId=" + USER_ID, headers=headers)
+        response = asyncio.get_event_loop().run_until_complete(
+            search.get_texts([main_url], clean=False, timeout=1.5, headers=headers))[0]
+
         # Strip control characters in the API response
-        response_text = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", response.text)
+        response_text = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", response)
         try:
             response_data = json.loads(response_text)
         except json.decoder.JSONDecodeError:
@@ -67,8 +69,7 @@ if __name__ == "__main__":
             sleep(30)
             continue
 
-        logging.info("{} {}".format(datetime.now(), response_data))
-        # print(response_data)
+        logging.info(response_data)
 
         if "broadcast" not in response_data or response_data["broadcast"] is None:
             print("Show not on.")

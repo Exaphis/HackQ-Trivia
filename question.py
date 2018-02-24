@@ -19,9 +19,8 @@ async def answer_question(question, answers):
     search_results = await search.search_google("+".join(question_keywords), 5)
     print(search_results)
 
-    # Parallelize access of found URLs
     search_text = [x.translate(punctuation_to_none) for x in await search.get_texts(search_results)]
-    # print("\n".join(search_text))
+
     best_answer = await __search_method1(search_text, answers, reverse)
     if best_answer == "":
         best_answer = await __search_method2(search_text, answers, reverse)
@@ -55,8 +54,7 @@ async def __search_method1(texts, answers, reverse):
     best_value = min(counts.values()) if reverse else max(counts.values())
     if not all(c == 0 for c in counts.values()) and list(counts.values()).count(best_value) == 1:
         return min(counts, key=counts.get) if reverse else max(counts, key=counts.get)
-    else:
-        return ""
+    return ""
 
 
 async def __search_method2(texts, answers, reverse):
@@ -77,7 +75,10 @@ async def __search_method2(texts, answers, reverse):
 
     print(counts)
     counts_sum = {answer: sum(keyword_counts.values()) for answer, keyword_counts in counts.items()}
-    return min(counts_sum, key=counts_sum.get) if reverse else max(counts_sum, key=counts_sum.get)
+
+    if not all(c == 0 for c in counts.values()):
+        return min(counts_sum, key=counts_sum.get) if reverse else max(counts_sum, key=counts_sum.get)
+    return ""
 
 
 async def __search_method3(question_keywords, answers, reverse):

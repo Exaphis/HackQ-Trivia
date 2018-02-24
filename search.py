@@ -15,7 +15,7 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:58.0) Gec
            "Accept": "*/*",
            "Accept-Language": "en-US,en;q=0.5",
            "Accept-Encoding": "gzip, deflate"}
-search_loop = asyncio.new_event_loop()
+GOOGLE_URL = "https://www.google.com/search?q={}&ie=utf-8&oe=utf-8&client=firefox-b-1-ab"
 
 
 def find_keywords(words):
@@ -25,6 +25,14 @@ def find_keywords(words):
     :return: Words without stopwords
     """
     return [w for w in tokenizer.tokenize(words.lower()) if w not in STOP]
+
+
+def get_google_links(page, num_results):
+    soup = BeautifulSoup(page, "html.parser")
+    results = soup.findAll("h3", {"class": "r"})
+    links = [str(r.find("a")["href"]) for r in results]
+    links = list(dict.fromkeys(links))  # Remove duplicates while preserving order
+    return links[:num_results]
 
 
 async def search_google(question, num_results):
@@ -38,27 +46,14 @@ async def search_google(question, num_results):
     # result = service.cse().list(q=question, cx=CSE_ID, num=num_results).execute()
     # return result["items"]
 
-    pages = await get_texts(["https://www.google.com/search?q={}&ie=utf-8&oe=utf-8&client=firefox-b-1-ab".format(question)],
-                            clean=False, timeout=5)
-    page = pages[0]
-    soup = BeautifulSoup(page, "html.parser")
-    results = soup.findAll("h3", {"class": "r"})
-    links = [str(r.find("a")["href"]) for r in results]
-    links = list(dict.fromkeys(links)) # Remove duplicates while preserving order
-    return links[:num_results]
+    pages = await get_texts([GOOGLE_URL.format(question)], clean=False, timeout=5)
+    return get_google_links(pages[0], num_results)
 
 
 async def multiple_search(questions, num_results):
-    queries = ["https://www.google.com/search?q={}&ie=utf-8&oe=utf-8&client=firefox-b-1-ab".format(q)
-               for q in questions]
+    queries = list(map(GOOGLE_URL.format, questions))
     pages = await get_texts(queries, clean=False, timeout=5)
-    link_list = []
-    for page in pages:
-        soup = BeautifulSoup(page, "html.parser")
-        results = soup.findAll("h3", {"class": "r"})
-        links = [str(r.find("a")["href"]) for r in results if "a href=" in str(r)]
-        links = list(dict.fromkeys(links))  # Remove duplicates while preserving order
-        link_list.append(links[:num_results])
+    link_list = [get_google_links(page, num_results) for page in pages]
     return link_list
 
 
@@ -97,10 +92,9 @@ async def fetch(url, session, timeout):
             return ""
 
 
-async def run(urls, timeout):
+async def run(urls, timeout, headers):
     tasks = []
-
-    async with aiohttp.ClientSession(headers=HEADERS) as session:
+    async with aiohttp.ClientSession(headers=headers) as session:
         for url in urls:
             task = asyncio.ensure_future(fetch(url, session, timeout))
             tasks.append(task)
@@ -109,9 +103,7 @@ async def run(urls, timeout):
         return responses
 
 
-async def get_texts(urls, clean=True, timeout=1.5):
-    responses = await run(urls, timeout)
+async def get_texts(urls, clean=True, timeout=1.5, headers=HEADERS):
+    responses = await run(urls, timeout, headers)
 
-    if clean:
-        responses = [html.unescape(clean_html(r).lower()) for r in responses]
-    return responses
+    return [html.unescape(clean_html(r).lower()) for r in responses] if clean else responses
