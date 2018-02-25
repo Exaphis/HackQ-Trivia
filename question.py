@@ -5,13 +5,19 @@ import time
 import search
 
 punctuation_to_none = str.maketrans({key: None for key in "!\"#$%&\'()*+,-.:;<=>?@[\\]^_`{|}~�"})
+punctuation_to_space = str.maketrans({key: " " for key in "!\"#$%&\'()*+,-.:;<=>?@[\\]^_`{|}~�"})
 
 
-async def answer_question(question, answers):
+async def answer_question(question, original_answers):
     print("Searching")
     start = time.time()
 
-    answers = [ans.translate(punctuation_to_none) for ans in answers]
+    answers = []
+    for ans in original_answers:
+        answers.append(ans.translate(punctuation_to_none))
+        answers.append(ans.translate(punctuation_to_space))
+    answers = list(dict.fromkeys(answers))
+    print(answers)
 
     reverse = "NOT" in question or ("least" in question.lower() and "at least" not in question.lower())
     question_keywords = search.find_keywords(question)
@@ -26,7 +32,7 @@ async def answer_question(question, answers):
         best_answer = await __search_method2(search_text, answers, reverse)
     print(best_answer + "\n")
 
-    answer3 = await __search_method3(question_keywords, answers, reverse)
+    answer3 = await __search_method3(question_keywords, original_answers, reverse)
     print(answer3)
 
     print("Search took {} seconds".format(time.time() - start))
@@ -76,7 +82,7 @@ async def __search_method2(texts, answers, reverse):
     print(counts)
     counts_sum = {answer: sum(keyword_counts.values()) for answer, keyword_counts in counts.items()}
 
-    if not all(c == 0 for c in counts.values()):
+    if not all(c == 0 for c in counts_sum.values()):
         return min(counts_sum, key=counts_sum.get) if reverse else max(counts_sum, key=counts_sum.get)
     return ""
 
@@ -91,18 +97,18 @@ async def __search_method3(question_keywords, answers, reverse):
     """
     print("Running method 3")
     search_results = await search.multiple_search(answers, 3)
-
+    print("Search processed")
     answer_lengths = list(map(len, search_results))
     search_results = itertools.chain.from_iterable(search_results)
 
     texts = [x.translate(punctuation_to_none) for x in await search.get_texts(search_results)]
-
+    print("URLs fetched")
     answer_text_map = {}
     for idx, length in enumerate(answer_lengths):
         answer_text_map[answers[idx]] = texts[0:length]
         del texts[0:length]
 
-    print(answer_text_map)
+    #print(answer_text_map)
     scores = {answer: 0 for answer in answers}
 
     for answer, texts in answer_text_map.items():

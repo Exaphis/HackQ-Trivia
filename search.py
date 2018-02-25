@@ -1,7 +1,6 @@
 import asyncio
-import html
 import re
-from concurrent.futures import CancelledError
+from html import unescape
 
 import aiohttp
 import async_timeout
@@ -9,7 +8,7 @@ from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
 from nltk.tokenize import RegexpTokenizer
 
-STOP = set(stopwords.words("english"))
+STOP = set(stopwords.words("english")) - {"most", "least"}
 tokenizer = RegexpTokenizer(r"\w+")
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:58.0) Gecko/20100101 Firefox/58.0",
            "Accept": "*/*",
@@ -30,8 +29,14 @@ def find_keywords(words):
 def get_google_links(page, num_results):
     soup = BeautifulSoup(page, "html.parser")
     results = soup.findAll("h3", {"class": "r"})
-    links = [str(r.find("a")["href"]) for r in results]
+
+    links = []
+    for r in results:
+        url = r.find("a")
+        if url is not None:
+            links.append(url["href"])
     links = list(dict.fromkeys(links))  # Remove duplicates while preserving order
+
     return links[:num_results]
 
 
@@ -87,8 +92,8 @@ async def fetch(url, session, timeout):
         try:
             async with session.get(url) as response:
                 return await response.text()
-        except CancelledError:
-            print("Server timeout to {}".format(url))
+        except:
+            print("Server timeout/error to {}".format(url))
             return ""
 
 
@@ -106,4 +111,4 @@ async def run(urls, timeout, headers):
 async def get_texts(urls, clean=True, timeout=1.5, headers=HEADERS):
     responses = await run(urls, timeout, headers)
 
-    return [html.unescape(clean_html(r).lower()) for r in responses] if clean else responses
+    return [unescape(clean_html(r).lower()) for r in responses] if clean else responses
