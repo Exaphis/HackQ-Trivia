@@ -1,16 +1,20 @@
+import asyncio
 import re
+from html import unescape
 
-import requests
+import aiohttp
+import async_timeout
 from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
 from nltk.tokenize import RegexpTokenizer
 
-STOP = set(stopwords.words("english"))
+STOP = set(stopwords.words("english")) - {"most", "least"}
 tokenizer = RegexpTokenizer(r"\w+")
-HEADER = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:58.0) Gecko/20100101 Firefox/58.0",
-          "Accept": "*/*",
-          "Accept-Language": "en-US,en;q=0.5",
-          "Accept-Encoding": "gzip, deflate"}
+HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:58.0) Gecko/20100101 Firefox/58.0",
+           "Accept": "*/*",
+           "Accept-Language": "en-US,en;q=0.5",
+           "Accept-Encoding": "gzip, deflate"}
+GOOGLE_URL = "https://www.google.com/search?q={}&ie=utf-8&oe=utf-8&client=firefox-b-1-ab"
 
 
 def find_keywords(words):
@@ -22,7 +26,21 @@ def find_keywords(words):
     return [w for w in tokenizer.tokenize(words.lower()) if w not in STOP]
 
 
-def search_google(question, num_results):
+def get_google_links(page, num_results):
+    soup = BeautifulSoup(page, "html.parser")
+    results = soup.findAll("h3", {"class": "r"})
+
+    links = []
+    for r in results:
+        url = r.find("a")
+        if url is not None:
+            links.append(url["href"])
+    links = list(dict.fromkeys(links))  # Remove duplicates while preserving order
+
+    return links[:num_results]
+
+
+async def search_google(question, num_results):
     """
     Returns num_results urls from a google search of question.
     :param question: Question to search
@@ -33,12 +51,15 @@ def search_google(question, num_results):
     # result = service.cse().list(q=question, cx=CSE_ID, num=num_results).execute()
     # return result["items"]
 
-    page = requests.get("https://www.google.com/search?q={}&ie=utf-8&oe=utf-8&client=firefox-b-1-ab"
-                        .format(question))
-    soup = BeautifulSoup(page.content, "html.parser")
-    results = list(map(str, soup.findAll("h3", {"class": "r"})))
-    links = [r[r.index("/url?q=")+7:r.index("&amp;sa=U")] for r in results if "/url?q=" in r and "class=\"sla\"" not in r]
-    return links[:num_results]
+    pages = await get_texts([GOOGLE_URL.format(question)], clean=False, timeout=5)
+    return get_google_links(pages[0], num_results)
+
+
+async def multiple_search(questions, num_results):
+    queries = list(map(GOOGLE_URL.format, questions))
+    pages = await get_texts(queries, clean=False, timeout=5)
+    link_list = [get_google_links(page, num_results) for page in pages]
+    return link_list
 
 
 def clean_html(html):
@@ -66,15 +87,28 @@ def clean_html(html):
     return cleaned.strip()
 
 
-def get_text(url):
-    """
-    Returns the text in a web page. Returns an empty string if timeout is reached.
-    :param url: URL to get text from
-    :return: Text of the web page, "" if timeout reached
-    """
-    try:
-        page_text = requests.get(url, timeout=1.5).text
-        return clean_html(page_text).lower()
-    except:
-        print("Connection error/timeout to " + url)
-        return ""
+async def fetch(url, session, timeout):
+    async with async_timeout.timeout(timeout):
+        try:
+            async with session.get(url) as response:
+                return await response.text()
+        except:
+            print("Server timeout/error to {}".format(url))
+            return ""
+
+
+async def run(urls, timeout, headers):
+    tasks = []
+    async with aiohttp.ClientSession(headers=headers) as session:
+        for url in urls:
+            task = asyncio.ensure_future(fetch(url, session, timeout))
+            tasks.append(task)
+
+        responses = await asyncio.gather(*tasks)
+        return responses
+
+
+async def get_texts(urls, clean=True, timeout=1.5, headers=HEADERS):
+    responses = await run(urls, timeout, headers)
+
+    return [unescape(clean_html(r).lower()) for r in responses] if clean else responses

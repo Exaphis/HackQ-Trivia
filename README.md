@@ -2,14 +2,13 @@
 Yet another HQ trivia bot, in Python. Automatically scrapes HQ Trivia questions without OCR and answers them.
 
 ## Getting Started
-Requires Python 3.6+
+Requires Python 3.5+
 ### Dependencies
 ```
 bs4
 nltk
-requests
+aiohttp
 websockets
-joblib
 ```
 ### Installation
 ```
