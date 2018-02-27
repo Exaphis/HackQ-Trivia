@@ -8,7 +8,6 @@ Requires Python 3.5+
 bs4
 nltk
 aiohttp
-websockets
 ```
 ### Installation
 ```

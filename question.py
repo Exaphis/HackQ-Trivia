@@ -25,7 +25,7 @@ async def answer_question(question, original_answers):
     search_results = await search.search_google("+".join(question_keywords), 5)
     print(search_results)
 
-    search_text = [x.translate(punctuation_to_none) for x in await search.get_texts(search_results)]
+    search_text = [x.translate(punctuation_to_none) for x in await search.get_clean_texts(search_results)]
 
     best_answer = await __search_method1(search_text, answers, reverse)
     if best_answer == "":
@@ -101,14 +101,14 @@ async def __search_method3(question_keywords, answers, reverse):
     answer_lengths = list(map(len, search_results))
     search_results = itertools.chain.from_iterable(search_results)
 
-    texts = [x.translate(punctuation_to_none) for x in await search.get_texts(search_results)]
+    texts = [x.translate(punctuation_to_none) for x in await search.get_clean_texts(search_results)]
     print("URLs fetched")
     answer_text_map = {}
     for idx, length in enumerate(answer_lengths):
         answer_text_map[answers[idx]] = texts[0:length]
         del texts[0:length]
 
-    #print(answer_text_map)
+    # print(answer_text_map)
     scores = {answer: 0 for answer in answers}
 
     for answer, texts in answer_text_map.items():

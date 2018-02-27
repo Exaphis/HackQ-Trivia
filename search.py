@@ -49,14 +49,13 @@ async def search_google(question, num_results):
     # Could use Google's Custom Search API here, limit of 100 queries per day
     # result = service.cse().list(q=question, cx=CSE_ID, num=num_results).execute()
     # return result["items"]
-
-    pages = await get_texts([GOOGLE_URL.format(question)], clean=False, timeout=5)
-    return get_google_links(pages[0], num_results)
+    page = await networking.get_response(GOOGLE_URL.format(question), timeout=5, headers=HEADERS)
+    return get_google_links(page, num_results)
 
 
 async def multiple_search(questions, num_results):
     queries = list(map(GOOGLE_URL.format, questions))
-    pages = await get_texts(queries, clean=False, timeout=5)
+    pages = await networking.get_responses(queries, timeout=5, headers=HEADERS)
     link_list = [get_google_links(page, num_results) for page in pages]
     return link_list
 
@@ -86,7 +85,7 @@ def clean_html(html):
     return cleaned.strip()
 
 
-async def get_texts(urls, clean=True, timeout=1.5, headers=HEADERS):
+async def get_clean_texts(urls, timeout=1.5, headers=HEADERS):
     responses = await networking.get_responses(urls, timeout, headers)
 
-    return [unescape(clean_html(r).lower()) for r in responses] if clean else responses
+    return [unescape(clean_html(r).lower()) for r in responses]

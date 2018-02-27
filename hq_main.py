@@ -1,39 +1,9 @@
 import asyncio
-import json
 import logging
-import re
-from datetime import datetime, timedelta
-from time import sleep
-
-import websockets
+import time
+from datetime import datetime
 
 import networking
-import question
-
-
-async def websocket_handler(uri, socket_headers):
-    try:
-        async with websockets.connect(uri, extra_headers=socket_headers) as websocket:
-            async for message in websocket:
-                # Remove control characters in the WebSocket message
-                message = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", message)
-                message_data = json.loads(message)
-                logging.info(message_data)
-
-                if message_data["type"] == "question":
-                    question_str = message_data["question"]
-                    answers = [ans["text"] for ans in message_data["answers"] if ans["text"].strip() != ""]
-                    print("\n" * 5)
-                    print("Question detected.")
-                    print("Question {} out of {}".format(message_data["questionNumber"], message_data["questionCount"]))
-                    print(question_str)
-                    print(answers)
-                    print()
-                    print(await question.answer_question(question_str, answers))
-    except websockets.ConnectionClosed:
-        pass
-    print("Socket closed.")
-
 
 if __name__ == "__main__":
     # Set up logging
@@ -56,16 +26,12 @@ if __name__ == "__main__":
 
     while True:
         print()
-        response = asyncio.get_event_loop().run_until_complete(
-            networking.get_responses([main_url], timeout=1.5, headers=headers))[0]
-
-        # Strip control characters in the API response
-        response_text = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", response)
         try:
-            response_data = json.loads(response_text)
-        except json.decoder.JSONDecodeError:
-            print("Server response not JSON, retrying in 30 seconds.")
-            sleep(30)
+            response_data = asyncio.get_event_loop().run_until_complete(
+                networking.get_json_response(main_url, timeout=1.5, headers=headers))
+        except:
+            print("Server response not JSON, retrying in 10 seconds.")
+            time.sleep(10)
             continue
 
         logging.info(response_data)
@@ -73,10 +39,13 @@ if __name__ == "__main__":
         if "broadcast" not in response_data or response_data["broadcast"] is None:
             print("Show not on.")
             next_time = datetime.strptime(response_data["nextShowTime"], "%Y-%m-%dT%H:%M:%S.000Z")
-            print("Next show time: {}".format((next_time - timedelta(hours=5)).strftime("%Y-%m-%d %I:%M %p")))
+            now = time.time()
+            offset = datetime.fromtimestamp(now) - datetime.utcfromtimestamp(now)
+
+            print("Next show time: {}".format((next_time + offset).strftime("%Y-%m-%d %I:%M %p")))
             print("Prize: " + response_data["nextShowPrize"])
-            sleep(1)
+            time.sleep(1)
         else:
             socket = response_data["broadcast"]["socketUrl"].replace("https", "wss")
             print("Show active, connecting to socket at {}".format(socket))
-            asyncio.get_event_loop().run_until_complete(websocket_handler(socket, headers))
+            asyncio.get_event_loop().run_until_complete(networking.websocket_handler(socket, headers))
