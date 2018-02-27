@@ -1,12 +1,11 @@
-import asyncio
 import re
 from html import unescape
 
-import aiohttp
-import async_timeout
 from bs4 import BeautifulSoup
 from nltk.corpus import stopwords
 from nltk.tokenize import RegexpTokenizer
+
+import networking
 
 STOP = set(stopwords.words("english")) - {"most", "least"}
 tokenizer = RegexpTokenizer(r"\w+")
@@ -87,28 +86,7 @@ def clean_html(html):
     return cleaned.strip()
 
 
-async def fetch(url, session, timeout):
-    async with async_timeout.timeout(timeout):
-        try:
-            async with session.get(url) as response:
-                return await response.text()
-        except:
-            print("Server timeout/error to {}".format(url))
-            return ""
-
-
-async def run(urls, timeout, headers):
-    tasks = []
-    async with aiohttp.ClientSession(headers=headers) as session:
-        for url in urls:
-            task = asyncio.ensure_future(fetch(url, session, timeout))
-            tasks.append(task)
-
-        responses = await asyncio.gather(*tasks)
-        return responses
-
-
 async def get_texts(urls, clean=True, timeout=1.5, headers=HEADERS):
-    responses = await run(urls, timeout, headers)
+    responses = await networking.get_responses(urls, timeout, headers)
 
     return [unescape(clean_html(r).lower()) for r in responses] if clean else responses

@@ -7,8 +7,8 @@ from time import sleep
 
 import websockets
 
+import networking
 import question
-import search
 
 
 async def websocket_handler(uri, socket_headers):
@@ -20,17 +20,16 @@ async def websocket_handler(uri, socket_headers):
                 message_data = json.loads(message)
                 logging.info(message_data)
 
-                if message_data["type"] == "question" and "answers" in message_data:
-                    question_s = message_data["question"]
+                if message_data["type"] == "question":
+                    question_str = message_data["question"]
                     answers = [ans["text"] for ans in message_data["answers"] if ans["text"].strip() != ""]
                     print("\n" * 5)
                     print("Question detected.")
-                    print(question_s)
+                    print("Question {} out of {}".format(message_data["questionNumber"], message_data["questionCount"]))
+                    print(question_str)
                     print(answers)
                     print()
-                    print(await question.answer_question(question_s, answers))
-                elif message_data["type"] == "broadcastEnded" and "reason" not in message_data:
-                    print("Broadcast ended.")
+                    print(await question.answer_question(question_str, answers))
     except websockets.ConnectionClosed:
         pass
     print("Socket closed.")
@@ -58,7 +57,7 @@ if __name__ == "__main__":
     while True:
         print()
         response = asyncio.get_event_loop().run_until_complete(
-            search.get_texts([main_url], clean=False, timeout=1.5, headers=headers))[0]
+            networking.get_responses([main_url], timeout=1.5, headers=headers))[0]
 
         # Strip control characters in the API response
         response_text = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", response)
