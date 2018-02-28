@@ -40,9 +40,9 @@ async def get_json_response(url, timeout, headers):
 
 
 async def websocket_handler(uri, headers):
-    async with aiohttp.ClientSession(headers=headers) as session:
-        async with session.ws_connect(uri) as ws:
-            for msg in ws:
+    async with aiohttp.ClientSession() as session:
+        async with session.ws_connect(uri, headers=headers) as ws:
+            async for msg in ws:
                 if msg.type == aiohttp.WSMsgType.TEXT:
                     message = msg.data
                     message = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", message)
