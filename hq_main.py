@@ -15,9 +15,9 @@ if __name__ == "__main__":
         USER_ID = conn_settings.readline().strip().split("=")[1]
 
     print("getting")
-    main_url = "https://api-quiz.hype.space/shows/now?type=hq&userId={}".format(USER_ID)
+    main_url = f"https://api-quiz.hype.space/shows/now?type=hq&userId={USER_ID}"
     headers = {"x-hq-client": "Android/1.3.0",
-               "Authorization": "Bearer " + BEARER_TOKEN,
+               "Authorization": f"Bearer {BEARER_TOKEN}",
                "x-hq-stk": "MQ==",
                "User-Agent": "okhttp/3.8.0"}
 
@@ -39,10 +39,10 @@ if __name__ == "__main__":
             now = time.time()
             offset = datetime.fromtimestamp(now) - datetime.utcfromtimestamp(now)
 
-            print("Next show time: {}".format((next_time + offset).strftime("%Y-%m-%d %I:%M %p")))
+            print(f"Next show time: {(next_time + offset).strftime('%Y-%m-%d %I:%M %p')}")
             print("Prize: " + response_data["nextShowPrize"])
             time.sleep(5)
         else:
             socket = response_data["broadcast"]["socketUrl"]
-            print("Show active, connecting to socket at {}".format(socket))
+            print(f"Show active, connecting to socket at {socket}")
             asyncio.get_event_loop().run_until_complete(networking.websocket_handler(socket, headers))

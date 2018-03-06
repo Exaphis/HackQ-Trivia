@@ -51,11 +51,11 @@ async def answer_question(question, original_answers):
             key_nouns.update(search.find_nouns(question_lower, num_nouns=5, reverse=True))
 
     key_nouns = list(key_nouns)
-    print("Question nouns: {}".format(key_nouns))
+    print(f"Question nouns: {key_nouns}")
     answer3 = await __search_method3(list(set(question_keywords)), key_nouns, original_answers, reverse)
     print(answer3)
 
-    print("Search took {} seconds".format(time.time() - start))
+    print(f"Search took {time.time() - start} seconds")
     return ""
 
 
@@ -72,7 +72,7 @@ async def __search_method1(texts, answers, reverse):
 
     for text in texts:
         for answer in counts:
-            counts[answer] += len(re.findall(" {} ".format(answer), text))
+            counts[answer] += len(re.findall(f" {answer} ", text))
 
     print(counts)
 
@@ -97,7 +97,7 @@ async def __search_method2(texts, answers, reverse):
     for text in texts:
         for keyword_counts in counts.values():
             for keyword in keyword_counts:
-                keyword_counts[keyword] += len(re.findall(" {} ".format(keyword), text))
+                keyword_counts[keyword] += len(re.findall(f" {keyword} ", text))
 
     print(counts)
     counts_sum = {answer: sum(keyword_counts.values()) for answer, keyword_counts in counts.items()}
@@ -144,7 +144,7 @@ async def __search_method3(question_keywords, question_key_nouns, answers, rever
         noun_score = 0
         for text in texts:
             for keyword, score_types in word_score_map.items():
-                score = len(re.findall(" {} ".format(keyword), text))
+                score = len(re.findall(f" {keyword} ", text))
                 if "KW" in score_types:
                     keyword_score += score
                 if "KN" in score_types:
@@ -153,6 +153,6 @@ async def __search_method3(question_keywords, question_key_nouns, answers, rever
         keyword_scores[answer] = keyword_score
         noun_scores[answer] = noun_score
 
-    print("Keyword scores: {}".format(keyword_scores))
-    print("Noun scores: {}".format(noun_scores))
+    print(f"Keyword scores: {keyword_scores}")
+    print(f"Noun scores: {noun_scores}")
     return min(noun_scores, key=noun_scores.get) if reverse else max(noun_scores, key=noun_scores.get)

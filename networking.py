@@ -13,7 +13,7 @@ async def fetch(url, session, timeout):
         async with session.get(url, timeout=timeout) as response:
             return await response.text()
     except:
-        print("Server timeout/error to {}".format(url))
+        print(f"Server timeout/error to {url}")
         return ""
 
 
@@ -56,14 +56,13 @@ async def websocket_handler(uri, headers):
                         answers = [ans["text"] for ans in message_data["answers"] if ans["text"].strip() != ""]
                         print("\n" * 5)
                         print("Question detected.")
-                        print("Question {} out of {}".format(message_data["questionNumber"],
-                                                             message_data["questionCount"]))
+                        print(f"Question {message_data['questionNumber']} out of {message_data['questionCount']}")
                         print(question_str)
                         print(answers)
                         print()
                         print(await question.answer_question(question_str, answers))
                 elif msg.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.ERROR):
-                    print("Closed: {}".format(msg.data))
+                    print(f"Closed: {msg.data}")
                     break
 
             print("Socket closed")

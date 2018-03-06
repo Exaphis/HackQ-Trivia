@@ -32,7 +32,9 @@ def find_nouns(text, num_nouns, reverse=False):
     tokens = word_tokenize(text)
     tags = tagger.tag(tokens)
     nouns = [tag[0] for tag in tags if tag[1][:2] == "NN"]
-    return nouns[:num_nouns] if not reverse else nouns[-num_nouns:]
+    valid_words = tokens[:num_nouns] if not reverse else tokens[-num_nouns]
+    ans = [noun for noun in nouns if noun in valid_words]
+    return ans if len(ans) > 0 else nouns
 
 
 def get_google_links(page, num_results):
