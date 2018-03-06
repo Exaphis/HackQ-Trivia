@@ -2,13 +2,16 @@ import re
 from html import unescape
 
 from bs4 import BeautifulSoup
+from nltk import word_tokenize
 from nltk.corpus import stopwords
+from nltk.tag.perceptron import PerceptronTagger
 from nltk.tokenize import RegexpTokenizer
 
 import networking
 
 STOP = set(stopwords.words("english")) - {"most", "least"}
 tokenizer = RegexpTokenizer(r"\w+")
+tagger = PerceptronTagger()
 HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:58.0) Gecko/20100101 Firefox/58.0",
            "Accept": "*/*",
            "Accept-Language": "en-US,en;q=0.5",
@@ -23,6 +26,13 @@ def find_keywords(words):
     :return: Words without stopwords
     """
     return [w for w in tokenizer.tokenize(words.lower()) if w not in STOP]
+
+
+def find_nouns(text, num_nouns, reverse=False):
+    tokens = word_tokenize(text)
+    tags = tagger.tag(tokens)
+    nouns = [tag[0] for tag in tags if tag[1][:2] == "NN"]
+    return nouns[:num_nouns] if not reverse else nouns[-num_nouns:]
 
 
 def get_google_links(page, num_results):

@@ -42,6 +42,7 @@ async def get_json_response(url, timeout, headers):
 async def websocket_handler(uri, headers):
     async with aiohttp.ClientSession() as session:
         async with session.ws_connect(uri, headers=headers) as ws:
+            print("Connected")
             async for msg in ws:
                 if msg.type == aiohttp.WSMsgType.TEXT:
                     message = msg.data
@@ -62,6 +63,7 @@ async def websocket_handler(uri, headers):
                         print()
                         print(await question.answer_question(question_str, answers))
                 elif msg.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.ERROR):
-                    print("Socket closed")
+                    print("Closed: {}".format(msg.data))
                     break
 
+            print("Socket closed")

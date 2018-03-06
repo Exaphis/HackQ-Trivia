@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
             print("Next show time: {}".format((next_time + offset).strftime("%Y-%m-%d %I:%M %p")))
             print("Prize: " + response_data["nextShowPrize"])
-            time.sleep(1)
+            time.sleep(5)
         else:
             socket = response_data["broadcast"]["socketUrl"]
             print("Show active, connecting to socket at {}".format(socket))
