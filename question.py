@@ -39,18 +39,19 @@ async def answer_question(question, original_answers):
 
     if len(key_nouns) == 0:
         q_word_location = -1
-        for q_word in ["what", "when", "who", "whom", "where", "why", "how"]:
+        for q_word in ["what", "when", "who", "which", "whom", "where", "why", "how"]:
             q_word_location = question_lower.find(q_word)
             if q_word_location != -1:
                 break
 
-        q_words = " ".split(question)
         if q_word_location > len(question) // 2 or q_word_location == -1:
-            key_nouns.update(search.find_nouns(question_lower, num_nouns=5))
+            key_nouns.update(search.find_nouns(question, num_words=5))
         else:
-            key_nouns.update(search.find_nouns(question_lower, num_nouns=5, reverse=True))
+            key_nouns.update(search.find_nouns(question, num_words=5, reverse=True))
 
-    key_nouns = list(key_nouns)
+        key_nouns -= {"type"}
+
+    key_nouns = [noun.lower() for noun in key_nouns]
     print(f"Question nouns: {key_nouns}")
     answer3 = await __search_method3(list(set(question_keywords)), key_nouns, original_answers, reverse)
     print(answer3)

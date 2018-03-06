@@ -28,13 +28,30 @@ def find_keywords(words):
     return [w for w in tokenizer.tokenize(words.lower()) if w not in STOP]
 
 
-def find_nouns(text, num_nouns, reverse=False):
+def find_nouns(text, num_words, reverse=False):
     tokens = word_tokenize(text)
     tags = tagger.tag(tokens)
-    nouns = [tag[0] for tag in tags if tag[1][:2] == "NN"]
-    valid_words = tokens[:num_nouns] if not reverse else tokens[-num_nouns]
-    ans = [noun for noun in nouns if noun in valid_words]
-    return ans if len(ans) > 0 else nouns
+    print(tags)
+
+    tags = tags[:num_words] if not reverse else tags[-num_words:]
+
+    nouns = []
+    consecutive_nouns = []
+
+    for tag in tags:
+        tag_type = tag[1]
+        word = tag[0]
+
+        if "NN" not in tag_type and len(consecutive_nouns) > 0:
+            nouns.append(" ".join(consecutive_nouns))
+            consecutive_nouns = []
+        elif "NN" in tag_type:
+            consecutive_nouns.append(word)
+
+    if len(consecutive_nouns) > 0:
+        nouns.append(" ".join(consecutive_nouns))
+
+    return nouns
 
 
 def get_google_links(page, num_results):
