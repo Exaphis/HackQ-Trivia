@@ -6,6 +6,7 @@ from nltk import word_tokenize
 from nltk.corpus import stopwords
 from nltk.tag.perceptron import PerceptronTagger
 from nltk.tokenize import RegexpTokenizer
+from unidecode import unidecode
 
 import networking
 
@@ -90,15 +91,6 @@ async def multiple_search(questions, num_results):
 
 
 def clean_html(html):
-    """
-    Copied from NLTK package.
-    Remove HTML markup from the given string.
-
-    :param html: the HTML string to be cleaned
-    :type html: str
-    :rtype: str
-    """
-
     # First we remove inline JavaScript/CSS:
     cleaned = re.sub(r"(?is)<(script|style).*?>.*?(</\1>)", "", html.strip())
     # Then we remove html comments. This has to be done before removing regular
@@ -111,10 +103,10 @@ def clean_html(html):
     cleaned = re.sub(r"\n", " ", cleaned)
     cleaned = re.sub(r"\s\s+", " ", cleaned)
 
-    return cleaned.strip()
+    return unidecode(unescape(cleaned.strip()))
 
 
 async def get_clean_texts(urls, timeout=1.5, headers=HEADERS):
     responses = await networking.get_responses(urls, timeout, headers)
 
-    return [unescape(clean_html(r).lower()) for r in responses]
+    return [clean_html(r).lower() for r in responses]

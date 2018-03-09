@@ -27,8 +27,8 @@ if __name__ == "__main__":
             response_data = asyncio.get_event_loop().run_until_complete(
                 networking.get_json_response(main_url, timeout=1.5, headers=headers))
         except:
-            print("Server response not JSON, retrying in 10 seconds.")
-            time.sleep(10)
+            print("Server response not JSON, retrying...")
+            time.sleep(1)
             continue
 
         logging.info(response_data)
