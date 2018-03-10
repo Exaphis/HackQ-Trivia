@@ -51,7 +51,10 @@ async def websocket_handler(uri, headers):
                     message_data = json.loads(message)
                     logging.info(message_data)
 
-                    if message_data["type"] == "question":
+                    if "error" in message_data and message_data["error"] == "Auth not valid":
+                        print("Connection settings invalid.")
+                        raise SystemError
+                    elif message_data["type"] == "question":
                         question_str = message_data["question"]
                         answers = [ans["text"] for ans in message_data["answers"] if ans["text"].strip() != ""]
                         print("\n" * 5)
