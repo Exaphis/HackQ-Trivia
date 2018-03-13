@@ -149,9 +149,12 @@ async def __search_method3(question_keywords, question_key_nouns, answers, rever
     for word in question_key_nouns:
         word_score_map[word].append("KN")
 
+    answer_noun_scores_map = {}
     for answer, texts in answer_text_map.items():
         keyword_score = 0
         noun_score = 0
+        noun_score_map = {}
+
         for text in texts:
             for keyword, score_types in word_score_map.items():
                 score = len(re.findall(f" {keyword} ", text))
@@ -159,9 +162,15 @@ async def __search_method3(question_keywords, question_key_nouns, answers, rever
                     keyword_score += score
                 if "KN" in score_types:
                     noun_score += score
+                    noun_score_map[keyword] = score
 
         keyword_scores[answer] = keyword_score
         noun_scores[answer] = noun_score
+        answer_noun_scores_map[answer] = noun_score_map
+
+    print()
+    print("\n".join([f"{answer}: {scores}" for answer, scores in answer_noun_scores_map.items()]))
+    print()
 
     print(f"Keyword scores: {keyword_scores}")
     print(f"Noun scores: {noun_scores}")
