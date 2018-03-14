@@ -4,11 +4,17 @@ Yet another HQ trivia bot, in Python. Automatically scrapes HQ Trivia questions 
 ## Getting Started
 Requires Python 3.6+
 ### Dependencies
+#### Required
 ```
+aiohttp
 bs4
 nltk
-aiohttp
 unidecode
+```
+#### Optional
+```
+aiodns
+cchardet
 ```
 ### Installation
 ```
