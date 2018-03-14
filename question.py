@@ -31,7 +31,15 @@ async def answer_question(question, original_answers):
               ("least" in question_lower and "at least" not in question_lower) or\
               "NEVER" in question
 
-    question_keywords = search.find_keywords(question)
+    quoted = re.findall('"([^"]*)"', question_lower)  # Get all words in quotes
+    no_quote = question_lower
+    for quote in quoted:
+        no_quote = no_quote.replace(f"\"{quote}\"", "1placeholder1")
+
+    question_keywords = search.find_keywords(no_quote)
+    for quote in quoted:
+        question_keywords[question_keywords.index("1placeholder1")] = quote
+
     print(question_keywords)
     search_results = await search.search_google("+".join(question_keywords), 5)
     print(search_results)
@@ -44,7 +52,7 @@ async def answer_question(question, original_answers):
     print(best_answer + "\n")
 
     # Get key nouns for Method 3
-    key_nouns = set(re.findall('"([^"]*)"', question_lower)) # Get all words in quotes
+    key_nouns = set(quoted)
 
     if len(key_nouns) == 0:
         q_word_location = -1
@@ -127,7 +135,7 @@ async def __search_method3(question_keywords, question_key_nouns, answers, rever
     :return: Answer whose search results contain the most keywords of the question
     """
     print("Running method 3")
-    search_results = await search.multiple_search(answers, 3)
+    search_results = await search.multiple_search(answers, 5)
     print("Search processed")
     answer_lengths = list(map(len, search_results))
     search_results = itertools.chain.from_iterable(search_results)
@@ -153,7 +161,7 @@ async def __search_method3(question_keywords, question_key_nouns, answers, rever
     for answer, texts in answer_text_map.items():
         keyword_score = 0
         noun_score = 0
-        noun_score_map = {}
+        noun_score_map = defaultdict(int)
 
         for text in texts:
             for keyword, score_types in word_score_map.items():
@@ -162,14 +170,14 @@ async def __search_method3(question_keywords, question_key_nouns, answers, rever
                     keyword_score += score
                 if "KN" in score_types:
                     noun_score += score
-                    noun_score_map[keyword] = score
+                    noun_score_map[keyword] += score
 
         keyword_scores[answer] = keyword_score
         noun_scores[answer] = noun_score
         answer_noun_scores_map[answer] = noun_score_map
 
     print()
-    print("\n".join([f"{answer}: {scores}" for answer, scores in answer_noun_scores_map.items()]))
+    print("\n".join([f"{answer}: {dict(scores)}" for answer, scores in answer_noun_scores_map.items()]))
     print()
 
     print(f"Keyword scores: {keyword_scores}")
