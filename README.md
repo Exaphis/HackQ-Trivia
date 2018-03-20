@@ -26,10 +26,11 @@ In Python 3, run:
 import nltk
 nltk.download("stopwords")
 nltk.download("averaged_perceptron_tagger")
+nltk.download("punkt")
 ```
 Enter your bearer token and user ID in the conn_settings.txt file. These values can be found by sniffing the traffic on your phone. The bearer token should be one line, without the word Bearer.
 
 ### Usage
 ```
-python3 hq-main.py
+python3 hq_main.py
 ```
