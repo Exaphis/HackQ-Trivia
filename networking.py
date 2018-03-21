@@ -12,8 +12,9 @@ async def fetch(url, session, timeout):
     try:
         async with session.get(url, timeout=timeout) as response:
             return await response.text()
-    except:
+    except Exception as e:
         print(f"Server timeout/error to {url}")
+        logging.error(type(e), e)
         return ""
 
 
@@ -49,21 +50,23 @@ async def websocket_handler(uri, headers):
                     message = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", message)
 
                     message_data = json.loads(message)
-                    logging.info(message_data)
 
                     if "error" in message_data and message_data["error"] == "Auth not valid":
                         print("Connection settings invalid.")
+                        logging.info(message_data)
                         raise SystemError
-                    elif message_data["type"] == "question":
-                        question_str = message_data["question"]
-                        answers = [ans["text"] for ans in message_data["answers"] if ans["text"].strip() != ""]
-                        print("\n" * 5)
-                        print("Question detected.")
-                        print(f"Question {message_data['questionNumber']} out of {message_data['questionCount']}")
-                        print(question_str)
-                        print(answers)
-                        print()
-                        print(await question.answer_question(question_str, answers))
+                    elif message_data["type"] != "interaction":
+                        logging.info(message_data)
+                        if message_data["type"] == "question":
+                            question_str = message_data["question"]
+                            answers = [ans["text"] for ans in message_data["answers"] if ans["text"].strip() != ""]
+                            print("\n" * 5)
+                            print("Question detected.")
+                            print(f"Question {message_data['questionNumber']} out of {message_data['questionCount']}")
+                            print(question_str)
+                            print(answers)
+                            print()
+                            print(await question.answer_question(question_str, answers))
                 elif msg.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.ERROR):
                     print(f"Closed: {msg.data}")
                     break
