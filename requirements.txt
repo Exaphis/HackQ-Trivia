@@ -1,0 +1,6 @@
+aiohttp
+bs4
+nltk
+unidecode
+aiodns
+cchardet
