@@ -12,9 +12,9 @@ async def fetch(url, session, timeout):
     try:
         async with session.get(url, timeout=timeout) as response:
             return await response.text()
-    except Exception as e:
+    except Exception:
         print(f"Server timeout/error to {url}")
-        logging.error(type(e), e)
+        logging.exception(f"Server timeout/error to {url}")
         return ""
 
 
