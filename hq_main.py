@@ -18,6 +18,7 @@ main_url = f"https://api-quiz.hype.space/shows/now?type=hq&userId={USER_ID}"
 headers = {"x-hq-client": "Android/1.3.0",
            "Authorization": f"Bearer {BEARER_TOKEN}",
            "x-hq-stk": "MQ==",
+           "Connection": "Keep-Alive",
            "User-Agent": "okhttp/3.8.0"}
 
 while True:
@@ -33,14 +34,17 @@ while True:
     logging.info(response_data)
 
     if "broadcast" not in response_data or response_data["broadcast"] is None:
-        print("Show not on.")
-        next_time = datetime.strptime(response_data["nextShowTime"], "%Y-%m-%dT%H:%M:%S.000Z")
-        now = time.time()
-        offset = datetime.fromtimestamp(now) - datetime.utcfromtimestamp(now)
+        if "error" in response_data and response_data["error"] == "Auth not valid":
+            raise RuntimeError("Connection settings invalid")
+        else:
+            print("Show not on.")
+            next_time = datetime.strptime(response_data["nextShowTime"], "%Y-%m-%dT%H:%M:%S.000Z")
+            now = time.time()
+            offset = datetime.fromtimestamp(now) - datetime.utcfromtimestamp(now)
 
-        print(f"Next show time: {(next_time + offset).strftime('%Y-%m-%d %I:%M %p')}")
-        print("Prize: " + response_data["nextShowPrize"])
-        time.sleep(5)
+            print(f"Next show time: {(next_time + offset).strftime('%Y-%m-%d %I:%M %p')}")
+            print("Prize: " + response_data["nextShowPrize"])
+            time.sleep(5)
     else:
         socket = response_data["broadcast"]["socketUrl"]
         print(f"Show active, connecting to socket at {socket}")

@@ -52,9 +52,8 @@ async def websocket_handler(uri, headers):
                     message_data = json.loads(message)
 
                     if "error" in message_data and message_data["error"] == "Auth not valid":
-                        print("Connection settings invalid.")
                         logging.info(message_data)
-                        raise SystemError
+                        raise RuntimeError("Connection settings invalid")
                     elif message_data["type"] != "interaction":
                         logging.info(message_data)
                         if message_data["type"] == "question":
