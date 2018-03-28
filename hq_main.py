@@ -1,51 +1,76 @@
-import asyncio
-import logging
 import time
 from datetime import datetime
+from json.decoder import JSONDecodeError
 
-import networking
+import requests
 
-# Set up logging
-logging.basicConfig(filename="data.log", level=logging.INFO, filemode="w")
+import settings
+from websocket_handler import WebSocketHandler
 
-# Read in bearer token and user ID
-with open("conn_settings.txt", "r") as conn_settings:
-    BEARER_TOKEN = conn_settings.readline().strip().split("=")[1]
-    USER_ID = conn_settings.readline().strip().split("=")[1]
+if settings.get("LOGGING", "Enable"):
+    import logging
 
-print("getting")
-main_url = f"https://api-quiz.hype.space/shows/now?type=hq&userId={USER_ID}"
-headers = {"x-hq-client": "Android/1.3.0",
-           "Authorization": f"Bearer {BEARER_TOKEN}",
-           "x-hq-stk": "MQ==",
-           "Connection": "Keep-Alive",
-           "User-Agent": "okhttp/3.8.0"}
+    # Make sure the logger can handle emojis
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    handler = logging.FileHandler(settings.get("LOGGING", "FILE"), "w", "utf-8")
+    handler.setFormatter(logging.Formatter("%(levelname)s:%(message)s"))
+    logger.addHandler(handler)
 
-while True:
-    print()
-    try:
-        response_data = asyncio.get_event_loop().run_until_complete(
-            networking.get_json_response(main_url, timeout=1.5, headers=headers))
-    except:
-        print("Server response not JSON, retrying...")
-        time.sleep(1)
-        continue
 
-    logging.info(response_data)
+class HQ:
+    def __init__(self):
+        self.HQ_URL = settings.HQ_URL
+        self.HQ_HEADERS = settings.HQ_HEADERS
 
-    if "broadcast" not in response_data or response_data["broadcast"] is None:
-        if "error" in response_data and response_data["error"] == "Auth not valid":
-            raise RuntimeError("Connection settings invalid")
+        self.logging_enabled = settings.get("LOGGING", "Enable")
+        self.show_next_info = settings.get("MAIN", "ShowNextShowInfo")
+        self.exit_if_offline = settings.get("MAIN", "ExitIfShowOffline")
+
+        self.websocket_handler = WebSocketHandler(self.HQ_HEADERS)
+
+        print("Hack-Q Trivia initialized.")
+
+    def connect(self):
+        while True:
+            websocket_uri = self.get_websocket_uri()
+            if websocket_uri is None:
+                continue
+
+            websocket_uri = websocket_uri.replace("https", "wss")
+            self.websocket_handler.connect(websocket_uri)
+
+    def get_websocket_uri(self):
+        try:
+            response = requests.get(self.HQ_URL, timeout=1.5, headers=self.HQ_HEADERS).json()
+            if self.logging_enabled:
+                logging.info(response)
+        except JSONDecodeError:
+            print("Server response not JSON, retrying...")
+            time.sleep(1)
+            return
+
+        if "broadcast" not in response or response["broadcast"] is None:
+            if "error" in response and response["error"] == "Auth not valid":
+                raise RuntimeError("Connection settings invalid")
+            else:
+                print("Show not on.")
+                if self.show_next_info:
+                    next_time = datetime.strptime(response["nextShowTime"], "%Y-%m-%dT%H:%M:%S.000Z")
+                    now = time.time()
+                    offset = datetime.fromtimestamp(now) - datetime.utcfromtimestamp(now)
+
+                    print(f"Next show time: {(next_time + offset).strftime('%Y-%m-%d %I:%M %p')}")
+                    print("Prize: " + response["nextShowPrize"])
+
+                if self.exit_if_offline:
+                    exit()
+
+            time.sleep(5) # Prevent spamming HQ servers
+            return None
         else:
-            print("Show not on.")
-            next_time = datetime.strptime(response_data["nextShowTime"], "%Y-%m-%dT%H:%M:%S.000Z")
-            now = time.time()
-            offset = datetime.fromtimestamp(now) - datetime.utcfromtimestamp(now)
+            print("Found socket.")
+            return response["broadcast"]["socketUrl"]
 
-            print(f"Next show time: {(next_time + offset).strftime('%Y-%m-%d %I:%M %p')}")
-            print("Prize: " + response_data["nextShowPrize"])
-            time.sleep(5)
-    else:
-        socket = response_data["broadcast"]["socketUrl"]
-        print(f"Show active, connecting to socket at {socket}")
-        asyncio.get_event_loop().run_until_complete(networking.websocket_handler(socket, headers))
+
+HQ().connect()

@@ -1,3 +1,5 @@
+lomond
+requests
 aiohttp
 bs4
 nltk
