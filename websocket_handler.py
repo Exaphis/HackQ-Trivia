@@ -17,7 +17,7 @@ class WebSocketHandler:
         for header, value in self.headers.items():
             websocket.add_header(str.encode(header), str.encode(value))
 
-        for event in websocket.connect(ping_rate=5, ping_timeout=5):
+        for event in websocket.connect(ping_rate=5):
             if event.name == "text":
                 message = json.loads(event.text)
                 print(message)
