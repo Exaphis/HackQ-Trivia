@@ -37,6 +37,7 @@ class HQ:
             if websocket_uri is None:
                 continue
 
+            print("Found socket, connecting...")
             websocket_uri = websocket_uri.replace("https", "wss")
             self.websocket_handler.connect(websocket_uri)
 
@@ -66,10 +67,9 @@ class HQ:
                 if self.exit_if_offline:
                     exit()
 
-            time.sleep(5) # Prevent spamming HQ servers
+            time.sleep(5)  # Don't spam HQ servers
             return None
         else:
-            print("Found socket.")
             return response["broadcast"]["socketUrl"]
 
 
