@@ -42,7 +42,7 @@ async def get_json_response(url, timeout, headers):
 
 async def websocket_handler(uri, headers):
     async with aiohttp.ClientSession() as session:
-        async with session.ws_connect(uri, headers=headers) as ws:
+        async with session.ws_connect(uri, headers=headers, heartbeat=5) as ws:
             print("Connected")
             async for msg in ws:
                 if msg.type == aiohttp.WSMsgType.TEXT:
@@ -50,6 +50,7 @@ async def websocket_handler(uri, headers):
                     message = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", message)
 
                     message_data = json.loads(message)
+                    logging.info(str(message_data).encode("utf-8"))
 
                     if "error" in message_data and message_data["error"] == "Auth not valid":
                         logging.info(message_data)
@@ -66,8 +67,5 @@ async def websocket_handler(uri, headers):
                             print(answers)
                             print()
                             print(await question.answer_question(question_str, answers))
-                elif msg.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.ERROR):
-                    print(f"Closed: {msg.data}")
-                    break
 
-            print("Socket closed")
+    print("Socket closed")
