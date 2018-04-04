@@ -4,6 +4,7 @@ import logging
 import re
 
 import aiohttp
+from unidecode import unidecode
 
 import question
 
@@ -42,7 +43,7 @@ async def get_json_response(url, timeout, headers):
 
 async def websocket_handler(uri, headers):
     async with aiohttp.ClientSession() as session:
-        async with session.ws_connect(uri, headers=headers, heartbeat=5) as ws:
+        async with session.ws_connect(uri, headers=headers, heartbeat=5, timeout=30) as ws:
             print("Connected")
             async for msg in ws:
                 if msg.type == aiohttp.WSMsgType.TEXT:
@@ -58,8 +59,8 @@ async def websocket_handler(uri, headers):
                     elif message_data["type"] != "interaction":
                         logging.info(message_data)
                         if message_data["type"] == "question":
-                            question_str = message_data["question"]
-                            answers = [ans["text"] for ans in message_data["answers"] if ans["text"].strip() != ""]
+                            question_str = unidecode(message_data["question"])
+                            answers = [unidecode(ans["text"]) for ans in message_data["answers"]]
                             print("\n" * 5)
                             print("Question detected.")
                             print(f"Question {message_data['questionNumber']} out of {message_data['questionCount']}")

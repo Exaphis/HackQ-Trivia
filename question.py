@@ -3,8 +3,6 @@ import re
 import time
 from collections import defaultdict
 
-from unidecode import unidecode
-
 import search
 
 punctuation_to_none = str.maketrans({key: None for key in "!\"#$%&\'()*+,-.:;<=>?@[\\]^_`{|}~�"})
@@ -15,11 +13,8 @@ async def answer_question(question, original_answers):
     print("Searching")
     start = time.time()
 
-    question = unidecode(question)
-
     answers = []
     for ans in original_answers:
-        ans = unidecode(ans)
         answers.append(ans.translate(punctuation_to_none))
         answers.append(ans.translate(punctuation_to_space))
     answers = list(dict.fromkeys(answers))
