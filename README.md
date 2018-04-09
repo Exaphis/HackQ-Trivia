@@ -22,6 +22,12 @@ git clone https://github.com/Exaphis/HackQ-Trivia.git
 cd HackQ-Trivia
 pip install -r requirements.txt
 ```
+
+If on Mac, run: 
+```
+/Applications/"Python 3.6"/"Install Certificates.command"
+```
+
 In Python 3, run:
 ```
 import nltk
