@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import time
 from datetime import datetime
 
@@ -9,9 +10,15 @@ import networking
 logging.basicConfig(filename="data.log", level=logging.INFO, filemode="w")
 
 # Read in bearer token and user ID
-with open("conn_settings.txt", "r") as conn_settings:
-    BEARER_TOKEN = conn_settings.readline().strip().split("=")[1]
-    USER_ID = conn_settings.readline().strip().split("=")[1]
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "conn_settings.txt"), "r") as conn_settings:
+    settings = conn_settings.read().splitlines()
+
+    try:
+        BEARER_TOKEN = settings[0].split("=")[1]
+        USER_ID = settings[1].split("=")[1]
+    except IndexError as e:
+        logging.fatal(f"Settings read error: {settings}")
+        raise e
 
 print("getting")
 main_url = f"https://api-quiz.hype.space/shows/now?type=hq&userId={USER_ID}"
