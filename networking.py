@@ -4,6 +4,7 @@ import logging
 import re
 
 import aiohttp
+from colorama import Fore, Style
 from unidecode import unidecode
 
 import question
@@ -64,9 +65,8 @@ async def websocket_handler(uri, headers):
                             print("\n" * 5)
                             print("Question detected.")
                             print(f"Question {message_data['questionNumber']} out of {message_data['questionCount']}")
-                            print(question_str)
-                            print(answers)
+                            print(f"{Fore.CYAN}{question_str}\n{answers}{Style.RESET_ALL}")
                             print()
-                            print(await question.answer_question(question_str, answers))
+                            await question.answer_question(question_str, answers)
 
     print("Socket closed")

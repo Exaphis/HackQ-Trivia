@@ -4,8 +4,12 @@ import os
 import time
 from datetime import datetime
 
+import colorama
+
 import networking
 
+# Set up color-coding
+colorama.init()
 # Set up logging
 logging.basicConfig(filename="data.log", level=logging.INFO, filemode="w")
 
