@@ -1,3 +1,4 @@
+colorama
 lomond
 requests
 aiohttp

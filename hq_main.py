@@ -12,13 +12,13 @@ if settings.get("LOGGING", "Enable"):
 
     # Make sure the logger can handle emojis
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
     handler = logging.FileHandler(settings.get("LOGGING", "FILE"), "w", "utf-8")
     handler.setFormatter(logging.Formatter("%(levelname)s:%(message)s"))
     logger.addHandler(handler)
 
 
-class HQ:
+class HackQ:
     def __init__(self):
         self.HQ_URL = settings.HQ_URL
         self.HQ_HEADERS = settings.HQ_HEADERS
@@ -29,7 +29,7 @@ class HQ:
 
         self.websocket_handler = WebSocketHandler(self.HQ_HEADERS)
 
-        print("Hack-Q Trivia initialized.")
+        print("HackQ Trivia initialized.\n")
 
     def connect(self):
         while True:
@@ -45,7 +45,7 @@ class HQ:
         try:
             response = requests.get(self.HQ_URL, timeout=1.5, headers=self.HQ_HEADERS).json()
             if self.logging_enabled:
-                logging.info(response)
+                logging.debug(response)
         except JSONDecodeError:
             print("Server response not JSON, retrying...")
             time.sleep(1)
@@ -62,7 +62,7 @@ class HQ:
                     offset = datetime.fromtimestamp(now) - datetime.utcfromtimestamp(now)
 
                     print(f"Next show time: {(next_time + offset).strftime('%Y-%m-%d %I:%M %p')}")
-                    print("Prize: " + response["nextShowPrize"])
+                    print(f"Prize: {response['nextShowPrize']}")
 
                 if self.exit_if_offline:
                     exit()
@@ -73,4 +73,4 @@ class HQ:
             return response["broadcast"]["socketUrl"]
 
 
-HQ().connect()
+HackQ().connect()
