@@ -23,6 +23,8 @@ class HackQ:
         self.HQ_URL = settings.HQ_URL
         self.HQ_HEADERS = settings.HQ_HEADERS
 
+        self.timeout = float(settings.get("CONNECTION", "Timeout"))
+
         self.logging_enabled = settings.get("LOGGING", "Enable")
         self.show_next_info = settings.get("MAIN", "ShowNextShowInfo")
         self.exit_if_offline = settings.get("MAIN", "ExitIfShowOffline")
@@ -43,7 +45,7 @@ class HackQ:
 
     def get_websocket_uri(self):
         try:
-            response = requests.get(self.HQ_URL, timeout=1.5, headers=self.HQ_HEADERS).json()
+            response = requests.get(self.HQ_URL, timeout=self.timeout, headers=self.HQ_HEADERS).json()
             if self.logging_enabled:
                 logging.debug(response)
         except JSONDecodeError:
@@ -53,7 +55,7 @@ class HackQ:
 
         if "broadcast" not in response or response["broadcast"] is None:
             if "error" in response and response["error"] == "Auth not valid":
-                raise RuntimeError("Connection settings invalid")
+                raise ConnectionRefusedError("User ID/Bearer invalid. Please check your settings.ini.")
             else:
                 print("Show not on.")
                 if self.show_next_info:

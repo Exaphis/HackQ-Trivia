@@ -25,7 +25,7 @@ class WebSocketHandler:
 
                 if "error" in message and message["error"] == "Auth not valid":
                     logging.debug(message)
-                    raise RuntimeError("User ID/Bearer invalid. Please check your settings.ini")
+                    raise ConnectionRefusedError("User ID/Bearer invalid. Please check your settings.ini.")
                 elif message["type"] == "question":
                     logging.debug(message)
                     question = unidecode(message["question"])
