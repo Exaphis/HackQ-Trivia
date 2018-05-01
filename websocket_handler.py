@@ -13,6 +13,7 @@ class WebSocketHandler:
         self.headers = headers
         self.logging_enabled = settings.get("LOGGING", "Enable")
         self.log_chat = settings.get("LOGGING", "LogChat")
+        self.show_question_summary = settings.get("LIVE", "ShowQuestionSummary")
 
     def connect(self, uri):
         websocket = WebSocket(uri)
@@ -23,11 +24,12 @@ class WebSocketHandler:
             if event.name == "text":
                 message = json.loads(event.text)
 
-                if "error" in message and message["error"] == "Auth not valid":
+                if message["type"] != "interaction" or (self.log_chat and message["type"] == "interaction"):
                     logging.debug(message)
+
+                if "error" in message and message["error"] == "Auth not valid":
                     raise ConnectionRefusedError("User ID/Bearer invalid. Please check your settings.ini.")
                 elif message["type"] == "question":
-                    logging.debug(message)
                     question = unidecode(message["question"])
                     choices = [unidecode(choice["text"]) for choice in message["answers"]]
 
@@ -35,5 +37,14 @@ class WebSocketHandler:
                     print("Question detected.")
                     print(f"Question {message['questionNumber']} out of {message['questionCount']}")
                     print(f"{Fore.CYAN}{question}\nChoices: {', '.join(choices)}{Style.RESET_ALL}\n")
-                elif self.logging_enabled and self.log_chat and message["type"] == "interaction":
-                    logging.debug(message)
+                elif self.show_question_summary and message["type"] == "questionSummary":
+                    question = unidecode(message["question"])
+                    print(f"\nQuestion Summary: {question}")
+
+                    for answer in message["answerCounts"]:
+                        ans_str = unidecode(answer["answer"])
+                        color = Fore.GREEN if bool(answer["correct"]) else Fore.RED
+                        print(f"{color}{ans_str}:{answer['count']}:{answer['correct']}{Style.RESET_ALL}")
+
+                    print(f"{message['advancingPlayersCount']} players advancing")
+                    print(f"{message['eliminatedPlayersCount']} players eliminated\n")
