@@ -13,11 +13,4 @@ HQ_HEADERS = {"Authorization": f"Bearer {BEARER}",
 
 def get(section, key):
     value = settings[section][key]
-    if value == "True":
-        return True
-    elif value == "False":
-        return False
-    return value
-
-
-
+    return value == "True" if value == "True" or value == "False" else value
