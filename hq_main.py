@@ -1,3 +1,4 @@
+import logging
 import time
 from datetime import datetime
 from json.decoder import JSONDecodeError
@@ -7,15 +8,12 @@ import requests
 import settings
 from websocket_handler import WebSocketHandler
 
-if settings.get("LOGGING", "Enable"):
-    import logging
-
-    # Make sure the logger can handle emojis
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
-    handler = logging.FileHandler(settings.get("LOGGING", "FILE"), "w", "utf-8")
-    handler.setFormatter(logging.Formatter("%(levelname)s:%(message)s"))
-    logger.addHandler(handler)
+# Make sure the logger can handle emojis
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
+handler = logging.FileHandler(settings.get("LOGGING", "FILE"), "w", "utf-8")
+handler.setFormatter(logging.Formatter("%(levelname)s:%(message)s"))
+logger.addHandler(handler)
 
 
 class HackQ:
@@ -25,7 +23,6 @@ class HackQ:
 
         self.timeout = float(settings.get("CONNECTION", "Timeout"))
 
-        self.logging_enabled = settings.get("LOGGING", "Enable")
         self.show_next_info = settings.get("MAIN", "ShowNextShowInfo")
         self.exit_if_offline = settings.get("MAIN", "ExitIfShowOffline")
 
@@ -46,8 +43,7 @@ class HackQ:
     def get_websocket_uri(self):
         try:
             response = requests.get(self.HQ_URL, timeout=self.timeout, headers=self.HQ_HEADERS).json()
-            if self.logging_enabled:
-                logging.debug(response)
+            logging.debug(response)
         except JSONDecodeError:
             print("Server response not JSON, retrying...")
             time.sleep(1)

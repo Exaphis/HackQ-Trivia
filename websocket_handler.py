@@ -12,7 +12,6 @@ from tools import color, colors
 class WebSocketHandler:
     def __init__(self, headers):
         self.headers = headers
-        self.logging_enabled = settings.get("LOGGING", "Enable")
         self.log_chat = settings.get("LOGGING", "LogChat")
         self.show_question_summary = settings.get("LIVE", "ShowQuestionSummary")
         self.question_handler = QuestionHandler()
@@ -26,8 +25,7 @@ class WebSocketHandler:
             if event.name == "text":
                 message = json.loads(event.text)
 
-                if self.logging_enabled and \
-                        (message["type"] != "interaction" or (self.log_chat and message["type"] == "interaction")):
+                if message["type"] != "interaction" or (self.log_chat and message["type"] == "interaction"):
                     logging.debug(message)
 
                 if "error" in message and message["error"] == "Auth not valid":
@@ -48,7 +46,7 @@ class WebSocketHandler:
 
                     for answer in message["answerCounts"]:
                         ans_str = unidecode(answer["answer"])
-                        print_color = colors.GREEN if bool(answer["correct"]) else colors.RED
+                        print_color = colors.GREEN if answer["correct"] == "True" else colors.RED
                         print(color(f"{ans_str}:{answer['count']}:{answer['correct']}", print_color))
 
                     print(f"{message['advancingPlayersCount']} players advancing")
