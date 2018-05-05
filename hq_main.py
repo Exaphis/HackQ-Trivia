@@ -9,7 +9,7 @@ import settings
 from websocket_handler import WebSocketHandler
 
 # Make sure the logger can handle emojis
-logger = logging.getLogger()
+logger = logging.getLogger("HackQ")
 logger.setLevel(logging.DEBUG)
 handler = logging.FileHandler(settings.get("LOGGING", "FILE"), "w", "utf-8")
 handler.setFormatter(logging.Formatter("%(levelname)s:%(message)s"))
@@ -28,6 +28,8 @@ class HackQ:
 
         self.websocket_handler = WebSocketHandler(self.HQ_HEADERS)
 
+        self.logger = logging.getLogger("HackQ")
+
         print("HackQ Trivia initialized.\n")
 
     def connect(self):
@@ -43,7 +45,7 @@ class HackQ:
     def get_websocket_uri(self):
         try:
             response = requests.get(self.HQ_URL, timeout=self.timeout, headers=self.HQ_HEADERS).json()
-            logging.debug(response)
+            self.logger.debug(response)
         except JSONDecodeError:
             print("Server response not JSON, retrying...")
             time.sleep(1)

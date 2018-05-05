@@ -12,8 +12,8 @@ from tools import color, colors
 class WebSocketHandler:
     def __init__(self, headers):
         self.headers = headers
-        self.log_chat = settings.get("LOGGING", "LogChat")
         self.show_question_summary = settings.get("LIVE", "ShowQuestionSummary")
+        self.logger = logging.getLogger("HackQ")
         self.question_handler = QuestionHandler()
 
     def connect(self, uri):
@@ -24,9 +24,7 @@ class WebSocketHandler:
         for event in websocket.connect(ping_rate=5):
             if event.name == "text":
                 message = json.loads(event.text)
-
-                if message["type"] != "interaction" or (self.log_chat and message["type"] == "interaction"):
-                    logging.debug(message)
+                self.logger.debug(message)
 
                 if "error" in message and message["error"] == "Auth not valid":
                     raise ConnectionRefusedError("User ID/Bearer invalid. Please check your settings.ini.")
