@@ -5,15 +5,19 @@ from lomond import WebSocket
 from unidecode import unidecode
 
 import settings
-from question_handler import QuestionHandler
-from tools import color, colors
+from question import QuestionHandler
+from tools import color, colors, init_logger
 
 
 class WebSocketHandler:
     def __init__(self, headers):
         self.headers = headers
         self.show_question_summary = settings.get("LIVE", "ShowQuestionSummary")
+
+        if "HackQ" not in logging.Logger.manager.loggerDict:
+            init_logger()
         self.logger = logging.getLogger("HackQ")
+
         self.question_handler = QuestionHandler()
 
     def connect(self, uri):

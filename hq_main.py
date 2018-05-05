@@ -6,14 +6,10 @@ from json.decoder import JSONDecodeError
 import requests
 
 import settings
-from websocket_handler import WebSocketHandler
+from tools import init_logger
+from websocket import WebSocketHandler
 
-# Make sure the logger can handle emojis
-logger = logging.getLogger("HackQ")
-logger.setLevel(logging.DEBUG)
-handler = logging.FileHandler(settings.get("LOGGING", "FILE"), "w", "utf-8")
-handler.setFormatter(logging.Formatter("%(levelname)s:%(message)s"))
-logger.addHandler(handler)
+init_logger()
 
 
 class HackQ:
