@@ -8,6 +8,7 @@ Requires Python 3.6+
 ```
 aiohttp
 bs4
+lomond
 nltk
 unidecode
 ```
