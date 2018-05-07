@@ -36,7 +36,7 @@ class QuestionHandler:
         pass
 
     @staticmethod
-    def get_best_answer(all_scores, choice_groups, reverse):
+    def get_best_answer(all_scores, choice_groups, reverse=False):
         # Add scores of the same answer together due to two ways of removing punctuation
         scores = {choices[0]: sum(all_scores[choice] for choice in choices) for choices in choice_groups}
 

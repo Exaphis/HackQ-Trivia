@@ -26,7 +26,7 @@ class HackQ:
 
         self.logger = logging.getLogger("HackQ")
 
-        print("HackQ Trivia initialized.\n")
+        print("HackQ Trivia initialized.")
 
     def connect(self):
         while True:
@@ -34,7 +34,7 @@ class HackQ:
             if websocket_uri is None:
                 continue
 
-            print("Found socket, connecting...")
+            print("Found socket, connecting...\n")
             websocket_uri = websocket_uri.replace("https", "wss")
             self.websocket_handler.connect(websocket_uri)
 
