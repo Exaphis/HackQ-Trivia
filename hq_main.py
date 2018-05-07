@@ -57,6 +57,6 @@ while True:
             print("Prize: " + response_data["nextShowPrize"])
             time.sleep(5)
     else:
-        socket = response_data["broadcast"]["socketUrl"]
+        socket = response_data["broadcast"]["socketUrl"].replace("https", "wss")
         print(f"Show active, connecting to socket at {socket}")
         asyncio.get_event_loop().run_until_complete(networking.websocket_handler(socket, headers))
