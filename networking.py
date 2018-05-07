@@ -5,6 +5,7 @@ import re
 
 import aiohttp
 from colorama import Fore, Style
+from lomond import WebSocket
 from unidecode import unidecode
 
 import question
@@ -43,30 +44,31 @@ async def get_json_response(url, timeout, headers):
 
 
 async def websocket_handler(uri, headers):
-    async with aiohttp.ClientSession() as session:
-        async with session.ws_connect(uri, headers=headers, heartbeat=5, timeout=30) as ws:
-            print("Connected")
-            async for msg in ws:
-                if msg.type == aiohttp.WSMsgType.TEXT:
-                    message = msg.data
-                    message = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", message)
+    websocket = WebSocket(uri)
+    for header, value in headers.items():
+        websocket.add_header(str.encode(header), str.encode(value))
 
-                    message_data = json.loads(message)
-                    logging.info(str(message_data).encode("utf-8"))
+    for msg in websocket.connect(ping_rate=5):
+        if msg.name == "text":
+            message = msg.text
+            message = re.sub(r"[\x00-\x1f\x7f-\x9f]", "", message)
 
-                    if "error" in message_data and message_data["error"] == "Auth not valid":
-                        logging.info(message_data)
-                        raise RuntimeError("Connection settings invalid")
-                    elif message_data["type"] != "interaction":
-                        logging.info(message_data)
-                        if message_data["type"] == "question":
-                            question_str = unidecode(message_data["question"])
-                            answers = [unidecode(ans["text"]) for ans in message_data["answers"]]
-                            print("\n" * 5)
-                            print("Question detected.")
-                            print(f"Question {message_data['questionNumber']} out of {message_data['questionCount']}")
-                            print(f"{Fore.CYAN}{question_str}\n{answers}{Style.RESET_ALL}")
-                            print()
-                            await question.answer_question(question_str, answers)
+            message_data = json.loads(message)
+            logging.info(str(message_data).encode("utf-8"))
+
+            if "error" in message_data and message_data["error"] == "Auth not valid":
+                logging.info(message_data)
+                raise RuntimeError("Connection settings invalid")
+            elif message_data["type"] != "interaction":
+                logging.info(message_data)
+                if message_data["type"] == "question":
+                    question_str = unidecode(message_data["question"])
+                    answers = [unidecode(ans["text"]) for ans in message_data["answers"]]
+                    print("\n" * 5)
+                    print("Question detected.")
+                    print(f"Question {message_data['questionNumber']} out of {message_data['questionCount']}")
+                    print(f"{Fore.CYAN}{question_str}\n{answers}{Style.RESET_ALL}")
+                    print()
+                    await question.answer_question(question_str, answers)
 
     print("Socket closed")

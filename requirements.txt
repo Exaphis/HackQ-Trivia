@@ -5,3 +5,4 @@ unidecode
 aiodns
 cchardet
 colorama
+lomond
