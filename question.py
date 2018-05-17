@@ -54,13 +54,8 @@ async def answer_question(question, original_answers):
     # Get key nouns for Method 3
     key_nouns = set(quoted)
 
+    q_word_location = search.find_q_word_location(question_lower)
     if len(key_nouns) == 0:
-        q_word_location = -1
-        for q_word in ["what", "when", "who", "which", "whom", "where", "why", "how"]:
-            q_word_location = question_lower.find(q_word)
-            if q_word_location != -1:
-                break
-
         if q_word_location > len(question) // 2 or q_word_location == -1:
             key_nouns.update(search.find_nouns(question, num_words=5))
         else:
@@ -68,7 +63,11 @@ async def answer_question(question, original_answers):
 
         key_nouns -= {"type"}
 
-    key_nouns = [noun.lower() for noun in key_nouns]
+    # Add consecutive capitalised words (Thanks talentoscope!)
+    key_nouns.update(re.findall("([A-Z][a-z]+(?=\s[A-Z])(?:\s[A-Z][a-z]+)+)",
+                                " ".join([w for idx, w in enumerate(question.split(" ")) if idx != q_word_location])))
+
+    key_nouns = {noun.lower() for noun in key_nouns}
     print(f"Question nouns: {key_nouns}")
     answer3 = await __search_method3(list(set(question_keywords)), key_nouns, original_answers, reverse)
     print(answer3)
