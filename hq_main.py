@@ -1,25 +1,36 @@
 import asyncio
 import logging
+import os
 import time
 from datetime import datetime
 
+import colorama
+
 import networking
 
+# Set up color-coding
+colorama.init()
 # Set up logging
 logging.basicConfig(filename="data.log", level=logging.INFO, filemode="w")
 
 # Read in bearer token and user ID
-with open("conn_settings.txt", "r") as conn_settings:
-    BEARER_TOKEN = conn_settings.readline().strip().split("=")[1]
-    USER_ID = conn_settings.readline().strip().split("=")[1]
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "conn_settings.txt"), "r") as conn_settings:
+    settings = conn_settings.read().splitlines()
+
+    try:
+        BEARER_TOKEN = settings[0].split("=")[1]
+        USER_ID = settings[1].split("=")[1]
+    except IndexError as e:
+        logging.fatal(f"Settings read error: {settings}")
+        raise e
 
 print("getting")
 main_url = f"https://api-quiz.hype.space/shows/now?type=hq&userId={USER_ID}"
-headers = {"x-hq-client": "Android/1.3.0",
-           "Authorization": f"Bearer {BEARER_TOKEN}",
-           "x-hq-stk": "MQ==",
-           "Connection": "Keep-Alive",
-           "User-Agent": "okhttp/3.8.0"}
+headers = {"Authorization": f"Bearer {BEARER_TOKEN}",
+           "x-hq-client": "Android/1.3.0"}
+# "x-hq-stk": "MQ==",
+# "Connection": "Keep-Alive",
+# "User-Agent": "okhttp/3.8.0"}
 
 while True:
     print()
@@ -46,6 +57,6 @@ while True:
             print("Prize: " + response_data["nextShowPrize"])
             time.sleep(5)
     else:
-        socket = response_data["broadcast"]["socketUrl"]
+        socket = response_data["broadcast"]["socketUrl"].replace("https", "wss")
         print(f"Show active, connecting to socket at {socket}")
         asyncio.get_event_loop().run_until_complete(networking.websocket_handler(socket, headers))

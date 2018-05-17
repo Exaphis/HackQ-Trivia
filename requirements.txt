@@ -4,3 +4,5 @@ nltk
 unidecode
 aiodns
 cchardet
+colorama
+lomond

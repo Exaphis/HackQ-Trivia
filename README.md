@@ -8,6 +8,7 @@ Requires Python 3.6+
 ```
 aiohttp
 bs4
+lomond
 nltk
 unidecode
 ```
@@ -22,6 +23,12 @@ git clone https://github.com/Exaphis/HackQ-Trivia.git
 cd HackQ-Trivia
 pip install -r requirements.txt
 ```
+
+If on Mac, run: 
+```
+/Applications/"Python 3.6"/"Install Certificates.command"
+```
+
 In Python 3, run:
 ```
 import nltk
@@ -33,3 +40,5 @@ Enter your bearer token and user ID in the conn_settings.txt file. These values 
 ```
 python3 hq_main.py
 ```
+
+If ```RuntimeError: Connection settings invalid``` appears, then your user ID/bearer token is invalid.
