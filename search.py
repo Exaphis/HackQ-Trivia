@@ -55,6 +55,13 @@ def find_nouns(text, num_words, reverse=False):
     return nouns
 
 
+def find_q_word_location(question_lower):
+    for q_word in ["what", "when", "who", "which", "whom", "where", "why", "how"]:
+        q_word_location = question_lower.find(q_word)
+        if q_word_location != -1:
+            return q_word_location
+
+
 def get_google_links(page, num_results):
     soup = BeautifulSoup(page, "html.parser")
     results = soup.findAll("h3", {"class": "r"})
