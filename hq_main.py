@@ -5,7 +5,7 @@ from json.decoder import JSONDecodeError
 
 import requests
 
-import settings
+from settings import config
 from tools import init_logger
 from websocket import WebSocketHandler
 
@@ -14,13 +14,15 @@ init_logger()
 
 class HackQ:
     def __init__(self):
-        self.HQ_URL = settings.HQ_URL
-        self.HQ_HEADERS = settings.HQ_HEADERS
+        self.BEARER = config.get("CONNECTION", "BEARER")
+        self.HQ_URL = f"https://api-quiz.hype.space/shows/now?type="
+        self.HQ_HEADERS = {"Authorization": f"Bearer {self.BEARER}",
+                           "x-hq-client": "Android/1.3.0"}
 
-        self.timeout = float(settings.get("CONNECTION", "Timeout"))
+        self.timeout = config.getfloat("CONNECTION", "Timeout")
 
-        self.show_next_info = settings.get("MAIN", "ShowNextShowInfo")
-        self.exit_if_offline = settings.get("MAIN", "ExitIfShowOffline")
+        self.show_next_info = config.getboolean("MAIN", "ShowNextShowInfo")
+        self.exit_if_offline = config.getboolean("MAIN", "ExitIfShowOffline")
 
         self.websocket_handler = WebSocketHandler(self.HQ_HEADERS)
 
@@ -49,7 +51,7 @@ class HackQ:
 
         if "broadcast" not in response or response["broadcast"] is None:
             if "error" in response and response["error"] == "Auth not valid":
-                raise ConnectionRefusedError("User ID/Bearer invalid. Please check your settings.ini.")
+                raise ConnectionRefusedError("Bearer invalid. Please check your settings.ini.")
             else:
                 print("Show not on.")
                 if self.show_next_info:

@@ -4,16 +4,16 @@ import logging
 from lomond import WebSocket
 from unidecode import unidecode
 
-import settings
 from question import QuestionHandler
+from settings import config
 from tools import color, colors, init_logger
 
 
 class WebSocketHandler:
     def __init__(self, headers):
         self.headers = headers
-        self.show_question_summary = settings.get("LIVE", "ShowQuestionSummary")
-        self.show_chat = settings.get("LIVE", "ShowChat")
+        self.show_question_summary = config.getboolean("LIVE", "ShowQuestionSummary")
+        self.show_chat = config.getboolean("LIVE", "ShowChat")
 
         self.block_chat = False
 
