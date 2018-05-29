@@ -16,6 +16,7 @@ logging.basicConfig(filename="data.log", level=logging.INFO, filemode="w")
 # Read in bearer token and user ID
 with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "conn_settings.txt"), "r") as conn_settings:
     settings = conn_settings.read().splitlines()
+    settings = [line for line in settings if line != "" and line != " "]
 
     try:
         BEARER_TOKEN = settings[0].split("=")[1]
