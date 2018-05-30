@@ -20,13 +20,12 @@ with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "conn_setting
 
     try:
         BEARER_TOKEN = settings[0].split("=")[1]
-        USER_ID = settings[1].split("=")[1]
     except IndexError as e:
         logging.fatal(f"Settings read error: {settings}")
         raise e
 
 print("getting")
-main_url = f"https://api-quiz.hype.space/shows/now?type=hq&userId={USER_ID}"
+main_url = f"https://api-quiz.hype.space/shows/now?type="
 headers = {"Authorization": f"Bearer {BEARER_TOKEN}",
            "x-hq-client": "Android/1.3.0"}
 # "x-hq-stk": "MQ==",
