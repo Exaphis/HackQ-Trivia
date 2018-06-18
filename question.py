@@ -45,10 +45,10 @@ class QuestionHandler:
         print("Running method 1")
 
         counts = {}
-        for idx, a in enumerate(answers):
+        for a in answer:
             answer = a.lower()
             counts[answer] = 0
-            self.fsa.add_word(f" {answer} ", idx)
+            self.fsa.add_word(f" {answer} ")
 
         self.fsa.make_automaton()
 
@@ -66,13 +66,24 @@ class QuestionHandler:
 
         return ""
 
-    def __method2(self):
+    def __method2(self, texts, answers, reverse):
         print("Running method 2")
+        counts = {}
+        for a_idx, answer in enumerate(answers):
+            keyword_scores = {}
+            for k_idx, k in enumerate(self.find_keywords(answer)):
+                keyword = k.lower()
+                keyword_scores[keyword] = 0
+                self.fsa.add_word(f" {keyword} ")
+            counts[answer] = keyword_scores
+
+        self.fsa.make_automaton()
+
 
     def __method3(self):
         pass
 
-    def find_keywords(self, words):
+    def find_keywords(self, words: str):
         return [w for w in self.nltk_tokenizer.tokenize(words.lower()) if w not in self.STOPWORDS]
 
     def find_nouns(self, text, num_words, reverse=False):
