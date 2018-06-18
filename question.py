@@ -17,7 +17,7 @@ class QuestionHandler:
             init_logger()
         self.logger = logging.getLogger("HackQ")
 
-        self.simplified_output = config.getboolean("LIVE", "SimplifiedOutput")
+        self.simplified_output = config.getboolean("LIVE", "SimplifiedOutput", fallback=False)
 
         self.fsa = ahocorasick.Automaton()
 
