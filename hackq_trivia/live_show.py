@@ -4,24 +4,22 @@ import logging
 from lomond import WebSocket
 from unidecode import unidecode
 
-from question import QuestionHandler
-from settings import config
-from tools import color, colors, init_logger
+from hackq_trivia.config import config
+from hackq_trivia.question import QuestionHandler
+from hackq_trivia.tools import color, colors
 
 
-class WebSocketHandler:
+class LiveShow:
     def __init__(self, headers):
         self.headers = headers
         self.show_question_summary = config.getboolean("LIVE", "ShowQuestionSummary")
         self.show_chat = config.getboolean("LIVE", "ShowChat")
 
-        self.block_chat = False
+        self.block_chat = False  # Block chat while question is active
 
-        if "HackQ" not in logging.Logger.manager.loggerDict:
-            init_logger()
-        self.logger = logging.getLogger("HackQ")
+        self.logger = logging.getLogger(__name__)
 
-        self.question_handler = QuestionHandler()
+        self.question_handler = QuestionHandler(headers)
 
     def connect(self, uri):
         websocket = WebSocket(uri)
@@ -41,7 +39,7 @@ class WebSocketHandler:
                     question = unidecode(message["question"])
                     choices = [unidecode(choice["text"]) for choice in message["answers"]]
 
-                    print("\n"*5)
+                    print("\n" * 5)
                     print(f"Question {message['questionNumber']} out of {message['questionCount']}")
                     print(color(question, colors.BLUE))
                     print("Choices:", color(", ".join(choices), colors.BLUE))
@@ -63,6 +61,6 @@ class WebSocketHandler:
                     print(f"{message['eliminatedPlayersCount']} players eliminated\n")
                 elif self.show_chat and self.block_chat and message["type"] == "questionClosed":
                     self.block_chat = False
-                    print("\n"*5)
+                    print("\n" * 5)
 
         print("Disconnected.")
