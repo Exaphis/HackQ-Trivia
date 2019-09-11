@@ -5,7 +5,7 @@ from lomond import WebSocket
 from unidecode import unidecode
 
 from hackq_trivia.config import config
-from hackq_trivia.question import QuestionHandler
+from hackq_trivia.question_handler import QuestionHandler
 from hackq_trivia.tools import color, colors
 
 
