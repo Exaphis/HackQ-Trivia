@@ -38,4 +38,3 @@ class Searcher:
     def get_google_links(self, query, num_results):
         res = self.search_service.cse().list(q=query, cx=self.cse_id, num=num_results).execute()
         return list(map(itemgetter("link"), res["items"]))
-
