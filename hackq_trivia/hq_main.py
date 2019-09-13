@@ -3,12 +3,12 @@ import time
 from datetime import datetime
 from json.decoder import JSONDecodeError
 
+import colorama
 import jwt
 import requests
 
 from hackq_trivia.config import config
 from hackq_trivia.live_show import LiveShow
-from hackq_trivia.tools import color, colors
 
 
 class BearerException(Exception):
@@ -37,10 +37,22 @@ class HackQ:
         self.show_next_info = config.getboolean("MAIN", "ShowNextShowInfo")
         self.exit_if_offline = config.getboolean("MAIN", "ExitIfShowOffline")
 
+        colorama.init()
+
         # Setup root logger
         import logging
         import os
         import sys
+
+        class LogFilterColor(logging.Filter):
+            def filter(self, record):
+                if not hasattr(record, "pre"):
+                    record.pre = ""
+                    record.post = ""
+                elif not hasattr(record, "post"):
+                    record.post = colorama.Style.RESET_ALL
+
+                return record
 
         log_filename = config.get("LOGGING", "FILE")
         if not os.path.isabs(log_filename):
@@ -53,7 +65,8 @@ class HackQ:
         fh.setFormatter(logging.Formatter("%(asctime)s %(name)-12s %(levelname)-8s %(message)s", "%m-%d %H:%M"))
 
         sh = logging.StreamHandler(sys.stdout)
-        sh.setFormatter(logging.Formatter("%(name)-12s: %(levelname)-8s %(message)s"))
+        sh.setFormatter(logging.Formatter("%(name)-12s: %(levelname)-8s %(pre)s%(message)s%(post)s"))
+        sh.addFilter(LogFilterColor())
         sh.setLevel(logging.INFO)
 
         root_logger.addHandler(sh)
@@ -83,7 +96,7 @@ class HackQ:
         self.logger.info(f"    Username: {bearer_info['username']}")
         self.logger.info(f"    Issuing time: {iat_local.strftime('%Y-%m-%d %I:%M %p')}")
         self.logger.info(f"    Expiration time: {exp_local.strftime('%Y-%m-%d %I:%M %p')}")
-        self.logger.info(color("HackQ-Trivia initialized.\n", colors.GREEN))
+        self.logger.info("HackQ-Trivia initialized.\n", extra={"pre": colorama.Fore.GREEN})
 
     async def __connect_show(self):
         async with LiveShow(self.headers) as show:
@@ -95,7 +108,7 @@ class HackQ:
             if self.websocket_uri is None:
                 continue
 
-            self.logger.info("Found socket, connecting...\n")
+            self.logger.info("Found socket, connecting...\n", extra={"pre": colorama.Fore.GREEN})
             asyncio.get_running_loop().run_until_complete(self.__connect_show())
             self.websocket_uri = None
 
@@ -104,7 +117,7 @@ class HackQ:
             response = self.session.get(self.HQ_URL, timeout=self.timeout).json()
             self.logger.debug(response)
         except JSONDecodeError:
-            self.logger.info("Server response not JSON, retrying...")
+            self.logger.info("Server response not JSON, retrying...", extra={"pre": colorama.Fore.RED})
             time.sleep(1)
             return
 
@@ -125,9 +138,9 @@ class HackQ:
             self.logger.info(f"Show start time: {start_time_local.strftime('%Y-%m-%d %I:%M %p')}")
 
         if "live" in next_show:
-            self.websocket_uri = next_show["live"]["socketUrl"]
+            self.websocket_uri = next_show["live"]["socketUrl"].replace("https", "wss")
         else:
-            self.logger.info("Show not live.\n")
+            self.logger.info("Show not live.\n", extra={"pre": colorama.Fore.RED})
             self.websocket_uri = None
             if self.exit_if_offline:
                 exit()

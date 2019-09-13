@@ -1,12 +1,12 @@
 import json
 import logging
 
+import colorama
 from lomond import WebSocket
 from unidecode import unidecode
 
 from hackq_trivia.config import config
 from hackq_trivia.question_handler import QuestionHandler
-from hackq_trivia.tools import color, colors
 
 
 class LiveShow:
@@ -45,21 +45,21 @@ class LiveShow:
 
                     self.logger.info("\n" * 5)
                     self.logger.info(f"Question {message['questionNumber']} out of {message['questionCount']}")
-                    self.logger.info(color(question, colors.BLUE))
-                    self.logger.info("Choices:", color(", ".join(choices), colors.BLUE))
+                    self.logger.info(question, extra={"pre": colorama.Fore.BLUE})
+                    self.logger.info(f"Choices: {', '.join(choices)}", extra={"pre": colorama.Fore.BLUE})
 
                     await self.question_handler.answer_question(question, choices)
 
                     self.block_chat = True
                 elif self.show_question_summary and message["type"] == "questionSummary":
                     question = unidecode(message["question"])
-                    self.logger.info(f"\nQuestion summary: {color(question, colors.BLUE)}")
+                    self.logger.info(f"Question summary: {question}", extra={"pre": colorama.Fore.BLUE})
 
                     for answer in message["answerCounts"]:
                         ans_str = unidecode(answer["answer"])
 
-                        self.logger.info(color(f"{ans_str}:{answer['count']}:{answer['correct']}",
-                                         colors.GREEN if answer['correct'] else colors.RED))
+                        self.logger.info(f"{ans_str}:{answer['count']}:{answer['correct']}",
+                                         extra={"pre": colorama.Fore.GREEN if answer['correct'] else colorama.Fore.RED})
 
                     self.logger.info(f"{message['advancingPlayersCount']} players advancing")
                     self.logger.info(f"{message['eliminatedPlayersCount']} players eliminated\n")
