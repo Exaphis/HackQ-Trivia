@@ -5,6 +5,7 @@ from datetime import datetime
 
 import colorama
 import jwt
+import nltk
 import requests
 
 from hackq_trivia.config import config
@@ -19,6 +20,7 @@ class HackQ:
     HQ_URL = f"https://api-quiz.hype.space/shows/schedule?type=hq"
 
     def __init__(self):
+        HackQ.download_nltk_resources()
         colorama.init()
 
         self.bearer = config.get("CONNECTION", "BEARER")
@@ -46,10 +48,14 @@ class HackQ:
         self.logger.info("HackQ-Trivia initialized.\n", extra={"pre": colorama.Fore.GREEN})
 
     @staticmethod
+    def download_nltk_resources():
+        for resource in {"stopwords", "averaged_perceptron_tagger", "punkt"}:
+            nltk.download(resource, quiet=True)
+
+    @staticmethod
     def init_root_logger():
-        import logging
+        import logging.config
         import os
-        import sys
 
         class LogFilterColor(logging.Filter):
             def filter(self, record):
@@ -62,24 +68,18 @@ class HackQ:
                 return record
 
         log_filename = config.get("LOGGING", "FILE")
+        script_dir = os.path.dirname(os.path.abspath(__file__))
         if not os.path.isabs(log_filename):
-            log_filename = os.path.join(os.path.dirname(os.path.abspath(__file__)), log_filename)
+            log_filename = os.path.join(script_dir, log_filename)
 
-        root_logger = logging.getLogger()
-        root_logger.setLevel(logging.DEBUG)
+        with open(os.path.join(script_dir, "logging_config.json")) as log_conf_file:
+            log_conf_dict = json.load(log_conf_file)
+            log_conf_dict["handlers"]["fileHandler"]["filename"] = log_filename
+            log_conf_dict["filters"]["LogFilterColor"]["()"] = LogFilterColor
 
-        fh = logging.FileHandler(log_filename, "w", "utf-8")
-        fh.setFormatter(logging.Formatter("%(asctime)s %(name)-12s %(levelname)-8s %(message)s", "%m-%d %H:%M"))
+            logging.config.dictConfig(log_conf_dict)
 
-        sh = logging.StreamHandler(sys.stdout)
-        sh.setFormatter(logging.Formatter("%(name)-12s: %(levelname)-8s %(pre)s%(message)s%(post)s"))
-        sh.addFilter(LogFilterColor())
-        sh.setLevel(logging.INFO)
-
-        root_logger.addHandler(sh)
-        root_logger.addHandler(fh)
-
-        return root_logger
+        return logging.getLogger()
 
     def validate_bearer(self):
         try:
