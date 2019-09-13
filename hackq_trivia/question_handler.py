@@ -1,32 +1,25 @@
 import logging
 import re
-from string import punctuation
+import string
 from time import time
 from typing import Match
 
-from nltk import word_tokenize
-from nltk.corpus import stopwords
-from nltk.tag.perceptron import PerceptronTagger
-from nltk.tokenize import sent_tokenize
+import nltk
 
 from hackq_trivia.config import config
 from hackq_trivia.searcher import Searcher
 
 
 class QuestionHandler:
-    STOPWORDS = set(stopwords.words("english")) - {"most", "least"}
-    PUNCTUATION_TO_NONE = str.maketrans({key: None for key in punctuation})
-    PUNCTUATION_TO_SPACE = str.maketrans({key: " " for key in punctuation})
+    STOPWORDS = set(nltk.corpus.stopwords.words("english")) - {"most", "least"}
+    PUNCTUATION_TO_NONE = str.maketrans({key: None for key in string.punctuation})
+    PUNCTUATION_TO_SPACE = str.maketrans({key: " " for key in string.punctuation})
 
     def __init__(self):
         self.simplified_output = config.getboolean("LIVE", "SimplifiedOutput")
-
         self.searcher = Searcher()
-
-        self.nltk_tagger = PerceptronTagger()
-
+        self.perceptron_tagger = nltk.tag.perceptron.PerceptronTagger()
         self.search_methods_to_use = [self.__method1, self.__method2]
-
         self.logger = logging.getLogger(__name__)
 
     async def close(self):
@@ -117,11 +110,11 @@ class QuestionHandler:
             return " " * len(match[0])
 
         # Remove capitalization at start of sentences
-        sentences = sent_tokenize(text)
+        sentences = nltk.tokenize.sent_tokenize(text)
         text = " ".join(sentence[0].lower() + sentence[1:] for sentence in sentences)
 
         # Remove all punctuation except quotes
-        text = text.translate(str.maketrans({key: None for key in set(punctuation) - {"\"", "'"}}))
+        text = text.translate(str.maketrans({key: None for key in set(string.punctuation) - {"\"", "'"}}))
 
         # Find words in quotes and replace words in quotes with whitespace 
         # of same length to avoid matching words multiple times
@@ -142,8 +135,8 @@ class QuestionHandler:
         return keywords
 
     def find_nouns(self, text, num_words, reverse=False):
-        tokens = word_tokenize(text)
-        tags = [tag for tag in self.nltk_tagger.tag(tokens) if tag[1] != "POS"]
+        tokens = nltk.word_tokenize(text)
+        tags = [tag for tag in self.perceptron_tagger.tag(tokens) if tag[1] != "POS"]
 
         if not self.simplified_output:
             self.logger.info(tags)

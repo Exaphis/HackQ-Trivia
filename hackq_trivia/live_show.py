@@ -2,7 +2,7 @@ import json
 import logging
 
 import colorama
-from lomond import WebSocket
+import lomond
 from unidecode import unidecode
 
 from hackq_trivia.config import config
@@ -20,13 +20,11 @@ class LiveShow:
         self.headers = headers
         self.show_question_summary = config.getboolean("LIVE", "ShowQuestionSummary")
         self.show_chat = config.getboolean("LIVE", "ShowChat")
-
         self.block_chat = False  # Block chat while question is active
-
         self.logger = logging.getLogger(__name__)
 
     async def connect(self, uri):
-        websocket = WebSocket(uri)
+        websocket = lomond.WebSocket(uri)
         for header, value in self.headers.items():
             websocket.add_header(str.encode(header), str.encode(value))
 

@@ -1,7 +1,7 @@
 import asyncio
+import json.decoder
 import time
 from datetime import datetime
-from json.decoder import JSONDecodeError
 
 import colorama
 import jwt
@@ -16,10 +16,15 @@ class BearerException(Exception):
 
 
 class HackQ:
+    HQ_URL = f"https://api-quiz.hype.space/shows/schedule?type=hq"
+
     def __init__(self):
+        colorama.init()
+
         self.bearer = config.get("CONNECTION", "BEARER")
         self.timeout = config.getfloat("CONNECTION", "Timeout")
-
+        self.show_next_info = config.getboolean("MAIN", "ShowNextShowInfo")
+        self.exit_if_offline = config.getboolean("MAIN", "ExitIfShowOffline")
         self.headers = {"User-Agent": "Android/1.40.0",
                         "x-hq-client": "Android/1.40.0",
                         "x-hq-country": "US",
@@ -28,18 +33,20 @@ class HackQ:
                         "Authorization": f"Bearer {self.bearer}",
                         "Connection": "close"}
 
-        self.HQ_URL = f"https://api-quiz.hype.space/shows/schedule?type=hq"
         self.session = requests.Session()
         self.session.headers.update(self.headers)
 
-        self.websocket_uri = None
+        self.logger = self.init_root_logger()
 
-        self.show_next_info = config.getboolean("MAIN", "ShowNextShowInfo")
-        self.exit_if_offline = config.getboolean("MAIN", "ExitIfShowOffline")
+        # Find local UTC offset
+        now = time.time()
+        self.local_utc_offset = datetime.fromtimestamp(now) - datetime.utcfromtimestamp(now)
 
-        colorama.init()
+        self.validate_bearer()
+        self.logger.info("HackQ-Trivia initialized.\n", extra={"pre": colorama.Fore.GREEN})
 
-        # Setup root logger
+    @staticmethod
+    def init_root_logger():
         import logging
         import os
         import sys
@@ -72,19 +79,16 @@ class HackQ:
         root_logger.addHandler(sh)
         root_logger.addHandler(fh)
 
-        self.logger = root_logger
+        return root_logger
 
-        # Make sure bearer token is valid
-        now = time.time()
-        self.local_utc_offset = datetime.fromtimestamp(now) - datetime.utcfromtimestamp(now)
-
+    def validate_bearer(self):
         try:
             bearer_info = jwt.decode(self.bearer, verify=False)
         except jwt.exceptions.DecodeError:
             raise BearerException("Bearer invalid. Please check your settings.ini.")
 
-        expiration_time = datetime.utcfromtimestamp(bearer_info['exp'])
-        issue_time = datetime.utcfromtimestamp(bearer_info['iat'])
+        expiration_time = datetime.utcfromtimestamp(bearer_info["exp"])
+        issue_time = datetime.utcfromtimestamp(bearer_info["iat"])
 
         if datetime.utcnow() > expiration_time:
             raise BearerException("Bearer expired. Please obtain another from your device.")
@@ -96,36 +100,42 @@ class HackQ:
         self.logger.info(f"    Username: {bearer_info['username']}")
         self.logger.info(f"    Issuing time: {iat_local.strftime('%Y-%m-%d %I:%M %p')}")
         self.logger.info(f"    Expiration time: {exp_local.strftime('%Y-%m-%d %I:%M %p')}")
-        self.logger.info("HackQ-Trivia initialized.\n", extra={"pre": colorama.Fore.GREEN})
 
-    async def __connect_show(self):
+    async def __connect_show(self, uri):
         async with LiveShow(self.headers) as show:
-            show.connect(self.websocket_uri)
+            show.connect(uri)
 
     def connect(self):
         while True:
-            self.get_show_info()
-            if self.websocket_uri is None:
-                continue
+            websocket_uri = self.get_next_show_info()
 
-            self.logger.info("Found socket, connecting...\n", extra={"pre": colorama.Fore.GREEN})
-            asyncio.get_running_loop().run_until_complete(self.__connect_show())
-            self.websocket_uri = None
+            if websocket_uri is not None:
+                self.logger.info("Found WebSocket, connecting...\n", extra={"pre": colorama.Fore.GREEN})
+                asyncio.get_running_loop().run_until_complete(self.__connect_show(websocket_uri))
 
-    def get_show_info(self):
+    def get_next_show_info(self):
+        """
+        Gets info of upcoming shows from HQ, prints it out if ShowNextShowInfo is True
+        :return: The show's WebSocket URI if it is live, else None
+        """
         try:
             response = self.session.get(self.HQ_URL, timeout=self.timeout).json()
             self.logger.debug(response)
-        except JSONDecodeError:
+        except json.decoder.JSONDecodeError:
             self.logger.info("Server response not JSON, retrying...", extra={"pre": colorama.Fore.RED})
             time.sleep(1)
-            return
+            return None
 
-        if "error" in response and response["error"] == "Auth not valid":
-            raise BearerException("Bearer invalid. Please check your settings.ini.")
+        if "error" in response:
+            if response["error"] == "Auth not valid":
+                raise BearerException("Bearer invalid. Please check your settings.ini.")
+            else:
+                self.logger.warning(f"Error in server response: {response['error']}")
+                time.sleep(1)
+                return None
 
         next_show = response["shows"][0]
-        if self.show_next_info:
+        if self.show_next_info:  # If desired, print info of next show
             start_time = datetime.strptime(next_show["startTime"], "%Y-%m-%dT%H:%M:%S.%fZ")
             start_time_local = start_time + self.local_utc_offset
 
@@ -137,15 +147,15 @@ class HackQ:
             self.logger.info(f"Prize: ${(next_show['prizeCents'] / 100):0,.2f} {next_show['currency']}")
             self.logger.info(f"Show start time: {start_time_local.strftime('%Y-%m-%d %I:%M %p')}")
 
-        if "live" in next_show:
-            self.websocket_uri = next_show["live"]["socketUrl"].replace("https", "wss")
+        if "live" in next_show:  # Return found WebSocket URI
+            return next_show["live"]["socketUrl"].replace("https", "wss")
         else:
             self.logger.info("Show not live.\n", extra={"pre": colorama.Fore.RED})
-            self.websocket_uri = None
             if self.exit_if_offline:
                 exit()
 
             time.sleep(5)
+            return None
 
 
 if __name__ == "__main__":
