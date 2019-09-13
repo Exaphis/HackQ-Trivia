@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import re
 from string import punctuation
@@ -15,19 +14,25 @@ from hackq_trivia.searcher import Searcher
 
 
 class QuestionHandler:
-    def __init__(self, headers):
+    STOPWORDS = set(stopwords.words("english")) - {"most", "least"}
+    PUNCTUATION_TO_NONE = str.maketrans({key: None for key in punctuation})
+    PUNCTUATION_TO_SPACE = str.maketrans({key: " " for key in punctuation})
+
+    def __init__(self):
         self.simplified_output = config.getboolean("LIVE", "SimplifiedOutput")
 
-        self.searcher = Searcher(headers, asyncio.get_event_loop())
+        self.searcher = Searcher()
 
-        self.STOPWORDS = set(stopwords.words("english")) - {"most", "least"}
         self.nltk_tagger = PerceptronTagger()
 
-        self.SEARCH_METHODS_TO_USE = [self.__method1, self.__method2]
+        self.search_methods_to_use = [self.__method1, self.__method2]
 
         self.logger = logging.getLogger(__name__)
 
-    def answer_question(self, question, original_choices):
+    async def close(self):
+        await self.searcher.close()
+
+    async def answer_question(self, question, original_choices):
         self.logger.info("Searching...")
         start_time = time()
 
@@ -36,13 +41,23 @@ class QuestionHandler:
         reverse = "NOT" in question or "NEVER" in question or \
                   ("least" in question_lower and "at least" not in question_lower)
 
-        choice_groups = [[choice.translate(str.maketrans({key: None for key in punctuation})),
-                          choice.translate(str.maketrans({key: " " for key in punctuation}))]
+        choice_groups = [[choice.translate(QuestionHandler.PUNCTUATION_TO_NONE),
+                          choice.translate(QuestionHandler.PUNCTUATION_TO_SPACE)]
                          for choice in original_choices]
         choices = sum(choice_groups, [])
 
         # Step 1: Search Google for results
+        question_keywords = self.find_keywords(question)
+        links = self.searcher.get_google_links(" ".join(question_keywords), 5)
+        print(links)
 
+        # Step 2: Fetch links and clean up text
+        link_texts = [Searcher.clean_html(html).translate(QuestionHandler.PUNCTUATION_TO_NONE)
+                      for html in await self.searcher.fetch_multiple(links)]
+
+        # Step 3: Find best answer for all search methods
+        for search_method in self.search_methods_to_use:
+            print(search_method(link_texts, choices, choice_groups, reverse))
 
         self.logger.info(f"Search took {round(time() - start_time, 2)} seconds")
 

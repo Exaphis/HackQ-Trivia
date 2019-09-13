@@ -8,11 +8,9 @@ from hackq_trivia.searcher import Searcher
 
 class SearcherTest(unittest.TestCase):
     async def setUpAsync(self):
-        self.searcher = Searcher(self.HEADERS)
+        self.searcher = Searcher()
 
     def setUp(self) -> None:
-        self.HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:58.0) Gecko/20100101 Firefox/58.0"}
-
         self.loop = asyncio.get_event_loop()
         self.loop.run_until_complete(self.setUpAsync())
 
@@ -22,13 +20,13 @@ class SearcherTest(unittest.TestCase):
     def test_fetch_single(self):
         resp = self.loop.run_until_complete(self.searcher.fetch("http://httpbin.org/user-agent"))
         resp = json.loads(resp)
-        self.assertEqual(resp["user-agent"], self.HEADERS["User-Agent"])
+        self.assertEqual(resp["user-agent"], Searcher.HEADERS["User-Agent"])
 
     def test_fetch_multiple(self):
         resps = self.loop.run_until_complete(self.searcher.fetch_multiple(["http://httpbin.org/user-agent"] * 5))
         for resp in resps:
             resp = json.loads(resp)
-            self.assertEqual(resp["user-agent"], self.HEADERS["User-Agent"])
+            self.assertEqual(resp["user-agent"], Searcher.HEADERS["User-Agent"])
 
     def test_fetch_error(self):
         with self.assertLogs() as cm:

@@ -1,3 +1,4 @@
+import asyncio
 import time
 from datetime import datetime
 from json.decoder import JSONDecodeError
@@ -7,6 +8,7 @@ import requests
 
 from hackq_trivia.config import config
 from hackq_trivia.live_show import LiveShow
+from hackq_trivia.tools import color, colors
 
 
 class BearerException(Exception):
@@ -15,20 +17,21 @@ class BearerException(Exception):
 
 class HackQ:
     def __init__(self):
-        self.BEARER = config.get("CONNECTION", "BEARER")
+        self.bearer = config.get("CONNECTION", "BEARER")
         self.timeout = config.getfloat("CONNECTION", "Timeout")
+
+        self.headers = {"User-Agent": "Android/1.40.0",
+                        "x-hq-client": "Android/1.40.0",
+                        "x-hq-country": "US",
+                        "x-hq-lang": "en",
+                        "x-hq-timezone": "America/New_York",
+                        "Authorization": f"Bearer {self.bearer}",
+                        "Connection": "close"}
 
         self.HQ_URL = f"https://api-quiz.hype.space/shows/schedule?type=hq"
         self.session = requests.Session()
-        self.session.headers.update({"User-Agent": "Android/1.40.0",
-                                     "x-hq-client": "Android/1.40.0",
-                                     "x-hq-country": "US",
-                                     "x-hq-lang": "en",
-                                     "x-hq-timezone": "America/New_York",
-                                     "Authorization": f"Bearer {self.BEARER}",
-                                     "Connection": "close"})
+        self.session.headers.update(self.headers)
 
-        self.show = LiveShow(self.session.headers)
         self.websocket_uri = None
 
         self.show_next_info = config.getboolean("MAIN", "ShowNextShowInfo")
@@ -63,7 +66,7 @@ class HackQ:
         self.local_utc_offset = datetime.fromtimestamp(now) - datetime.utcfromtimestamp(now)
 
         try:
-            bearer_info = jwt.decode(self.BEARER, verify=False)
+            bearer_info = jwt.decode(self.bearer, verify=False)
         except jwt.exceptions.DecodeError:
             raise BearerException("Bearer invalid. Please check your settings.ini.")
 
@@ -80,7 +83,11 @@ class HackQ:
         self.logger.info(f"    Username: {bearer_info['username']}")
         self.logger.info(f"    Issuing time: {iat_local.strftime('%Y-%m-%d %I:%M %p')}")
         self.logger.info(f"    Expiration time: {exp_local.strftime('%Y-%m-%d %I:%M %p')}")
-        self.logger.info("HackQ-Trivia initialized.\n")
+        self.logger.info(color("HackQ-Trivia initialized.\n", colors.GREEN))
+
+    async def __connect_show(self):
+        async with LiveShow(self.headers) as show:
+            show.connect(self.websocket_uri)
 
     def connect(self):
         while True:
@@ -89,7 +96,7 @@ class HackQ:
                 continue
 
             self.logger.info("Found socket, connecting...\n")
-            self.show.connect(self.websocket_uri)
+            asyncio.get_running_loop().run_until_complete(self.__connect_show())
             self.websocket_uri = None
 
     def get_show_info(self):
