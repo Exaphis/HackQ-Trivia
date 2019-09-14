@@ -59,6 +59,9 @@ class HackQ:
 
         class LogFilterColor(logging.Filter):
             def filter(self, record):
+                if "hackq" not in record.name:
+                    return None
+
                 if not hasattr(record, "pre"):
                     record.pre = ""
                     record.post = ""
