@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "disable_existing_loggers": true,
+  "formatters": {
+    "fileFormatter": {
+      "format": "%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
+      "datefmt": "%m-%d %H:%M"
+    },
+    "consoleFormatter": {
+      "format": "%(levelname)-8s %(pre)s%(message)s%(post)s"
+    }
+  },
+  "handlers": {
+    "fileHandler": {
+      "class": "logging.FileHandler",
+      "formatter": "fileFormatter",
+      "filename": "data.log",
+      "mode": "w"
+    },
+    "consoleHandler": {
+      "level": "INFO",
+      "class": "logging.StreamHandler",
+      "formatter": "consoleFormatter",
+      "stream": "ext://sys.stdout",
+      "filters": ["LogFilterColor"]
+    }
+  },
+  "filters": {
+    "LogFilterColor": {
+      "()": "LogFilterColor"
+    }
+  },
+  "loggers": {
+    "": {
+      "handlers": ["consoleHandler", "fileHandler"],
+      "level": "DEBUG"
+    }
+  }
+}

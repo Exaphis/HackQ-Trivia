@@ -1,8 +1,11 @@
+colorama
+lomond
+requests
 aiohttp
 bs4
 nltk
+google-api-python-client
 unidecode
 aiodns
 cchardet
-colorama
-lomond
+pyjwt
