@@ -12,6 +12,7 @@ from hackq_trivia.question_handler import QuestionHandler
 class LiveShow:
     async def __aenter__(self):
         self.question_handler = QuestionHandler()
+        return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.question_handler.close()
@@ -22,6 +23,7 @@ class LiveShow:
         self.show_chat = config.getboolean("LIVE", "ShowChat")
         self.block_chat = False  # Block chat while question is active
         self.logger = logging.getLogger(__name__)
+        self.logger.info("LiveShow initialized.")
 
     async def connect(self, uri):
         websocket = lomond.WebSocket(uri)

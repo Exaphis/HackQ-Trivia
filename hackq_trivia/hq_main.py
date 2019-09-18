@@ -7,6 +7,8 @@ import colorama
 import jwt
 import nltk
 import requests
+import logging
+import logging.config
 
 from hackq_trivia.config import config
 from hackq_trivia.live_show import LiveShow
@@ -38,7 +40,8 @@ class HackQ:
         self.session = requests.Session()
         self.session.headers.update(self.headers)
 
-        self.logger = self.init_root_logger()
+        self.init_root_logger()
+        self.logger = logging.getLogger(__name__)
 
         # Find local UTC offset
         now = time.time()
@@ -54,12 +57,11 @@ class HackQ:
 
     @staticmethod
     def init_root_logger():
-        import logging.config
         import os
 
         class LogFilterColor(logging.Filter):
             def filter(self, record):
-                if "hackq" not in record.name:
+                if "hackq" not in record.name and "__main__" not in record.name:
                     return None
 
                 if not hasattr(record, "pre"):
@@ -81,8 +83,6 @@ class HackQ:
             log_conf_dict["filters"]["LogFilterColor"]["()"] = LogFilterColor
 
             logging.config.dictConfig(log_conf_dict)
-
-        return logging.getLogger()
 
     def validate_bearer(self):
         try:
@@ -106,7 +106,7 @@ class HackQ:
 
     async def __connect_show(self, uri):
         async with LiveShow(self.headers) as show:
-            show.connect(uri)
+            await show.connect(uri)
 
     def connect(self):
         while True:
@@ -114,7 +114,7 @@ class HackQ:
 
             if websocket_uri is not None:
                 self.logger.info("Found WebSocket, connecting...\n", extra={"pre": colorama.Fore.GREEN})
-                asyncio.get_running_loop().run_until_complete(self.__connect_show(websocket_uri))
+                asyncio.run(self.__connect_show(websocket_uri))
 
     def get_next_show_info(self):
         """

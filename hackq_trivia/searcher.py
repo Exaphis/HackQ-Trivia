@@ -12,7 +12,7 @@ from hackq_trivia.config import config
 
 
 class Searcher:
-    HEADERS = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:58.0) Gecko/20100101 Firefox/58.0"}
+    HEADERS = {"User-Agent": "HQbot"}
 
     def __init__(self):
         self.timeout = config.getfloat("CONNECTION", "Timeout")
@@ -31,7 +31,7 @@ class Searcher:
             return ""
 
     async def fetch_multiple(self, urls):
-        tasks = [asyncio.ensure_future(self.fetch(url)) for url in urls]
+        tasks = [asyncio.create_task(self.fetch(url)) for url in urls]
         responses = await asyncio.gather(*tasks)
         return responses
 
@@ -43,5 +43,9 @@ class Searcher:
         return list(map(operator.itemgetter("link"), response["items"]))
 
     @staticmethod
-    def clean_html(html):
-        return unidecode(unescape(bs4.BeautifulSoup(html, features="html.parser").get_text()))
+    def html_to_visible_text(html):
+        soup = bs4.BeautifulSoup(html, features="html.parser")
+        for s in soup(["style", "script", "[document]", "head", "title"]):
+            s.extract()
+
+        return unidecode(unescape(soup.get_text())).lower()

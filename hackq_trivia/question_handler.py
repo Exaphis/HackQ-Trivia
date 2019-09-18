@@ -5,6 +5,7 @@ from time import time
 from typing import Match
 
 import nltk
+import colorama
 
 from hackq_trivia.config import config
 from hackq_trivia.searcher import Searcher
@@ -41,16 +42,19 @@ class QuestionHandler:
 
         # Step 1: Search Google for results
         question_keywords = self.find_keywords(question)
+        if not self.simplified_output:
+            self.logger.info(f"Question keywords: {question_keywords}")
+
         links = self.searcher.get_google_links(" ".join(question_keywords), 5)
-        print(links)
 
         # Step 2: Fetch links and clean up text
-        link_texts = [Searcher.clean_html(html).translate(QuestionHandler.PUNCTUATION_TO_NONE)
+        link_texts = [Searcher.html_to_visible_text(html).translate(QuestionHandler.PUNCTUATION_TO_NONE)
                       for html in await self.searcher.fetch_multiple(links)]
 
         # Step 3: Find best answer for all search methods
         for search_method in self.search_methods_to_use:
-            print(search_method(link_texts, choices, choice_groups, reverse))
+            self.logger.info(search_method(link_texts, choices, choice_groups, reverse),
+                             extra={"pre": colorama.Fore.BLUE})
 
         self.logger.info(f"Search took {round(time() - start_time, 2)} seconds")
 
@@ -68,7 +72,7 @@ class QuestionHandler:
         counts = {answer: 0 for answer in answers}
         for text in texts:
             for answer in answers:
-                counts[answer] += text.count(answer)
+                counts[answer] += text.count(" " + answer.lower() + " ")
 
         self.logger.info(counts)
         return self.__get_best_answer(counts, answer_groups, reverse)
@@ -87,13 +91,13 @@ class QuestionHandler:
         counts = {answer: 0 for answer in answers}
         for text in texts:
             for answer in answers:
-                for keyword in self.find_keywords(answer):
-                    counts[answer] += text.count(keyword.lower())
+                for keyword in self.find_keywords(answer, sentences=False):
+                    counts[answer] += text.count(" " + keyword.lower() + " ")
 
         self.logger.info(counts)
         return self.__get_best_answer(counts, answer_groups, reverse)
 
-    def find_keywords(self, text: str):
+    def find_keywords(self, text: str, sentences=True):
         """
         Returns the keywords from a string containing text, in the order they appear.
         Keywords:
@@ -101,20 +105,25 @@ class QuestionHandler:
         - Consecutively capitalized words
         - Words that aren't stopwords
         :param text: Text to analyze
+        :param sentences: Whether or not text is comprised of sentences
         :return: List of keywords of text
         """
         keyword_indices = {}
 
-        def process_match(match: Match[str]):
-            keyword_indices[match[1]] = match.start()
-            return " " * len(match[0])
-
-        # Remove capitalization at start of sentences
-        sentences = nltk.tokenize.sent_tokenize(text)
-        text = " ".join(sentence[0].lower() + sentence[1:] for sentence in sentences)
+        if sentences:
+            # Remove capitalization at start of sentences
+            sentences = nltk.tokenize.sent_tokenize(text)
+            text = " ".join(sentence[0].lower() + sentence[1:] for sentence in sentences)
 
         # Remove all punctuation except quotes
         text = text.translate(str.maketrans({key: None for key in set(string.punctuation) - {"\"", "'"}}))
+
+        # If a match is encountered:
+        #   Add entry to keyword_indices
+        #   Return string containing spaces of same length as the match to replace match with
+        def process_match(match: Match[str]):
+            keyword_indices[match[1]] = match.start()
+            return " " * len(match[0])
 
         # Find words in quotes and replace words in quotes with whitespace 
         # of same length to avoid matching words multiple times
@@ -132,6 +141,7 @@ class QuestionHandler:
 
         # Return keywords, sorted by index of occurrence
         keywords = list(sorted(keyword_indices, key=keyword_indices.get))
+        # TODO: handle plural and singular
         return keywords
 
     def find_nouns(self, text, num_words, reverse=False):
