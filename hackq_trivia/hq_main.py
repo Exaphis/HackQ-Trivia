@@ -29,6 +29,7 @@ class HackQ:
         self.timeout = config.getfloat("CONNECTION", "Timeout")
         self.show_next_info = config.getboolean("MAIN", "ShowNextShowInfo")
         self.exit_if_offline = config.getboolean("MAIN", "ExitIfShowOffline")
+        self.show_bearer_info = config.getboolean("MAIN", "ShowBearerInfo")
         self.headers = {"User-Agent": "Android/1.40.0",
                         "x-hq-client": "Android/1.40.0",
                         "x-hq-country": "US",
@@ -96,13 +97,14 @@ class HackQ:
         if datetime.utcnow() > expiration_time:
             raise BearerException("Bearer expired. Please obtain another from your device.")
 
-        exp_local = expiration_time + self.local_utc_offset
-        iat_local = issue_time + self.local_utc_offset
+        if self.show_bearer_info:
+            exp_local = expiration_time + self.local_utc_offset
+            iat_local = issue_time + self.local_utc_offset
 
-        self.logger.info("Bearer info:")
-        self.logger.info(f"    Username: {bearer_info['username']}")
-        self.logger.info(f"    Issuing time: {iat_local.strftime('%Y-%m-%d %I:%M %p')}")
-        self.logger.info(f"    Expiration time: {exp_local.strftime('%Y-%m-%d %I:%M %p')}")
+            self.logger.info("Bearer info:")
+            self.logger.info(f"    Username: {bearer_info['username']}")
+            self.logger.info(f"    Issuing time: {iat_local.strftime('%Y-%m-%d %I:%M %p')}")
+            self.logger.info(f"    Expiration time: {exp_local.strftime('%Y-%m-%d %I:%M %p')}")
 
     async def __connect_show(self, uri):
         async with LiveShow(self.headers) as show:
