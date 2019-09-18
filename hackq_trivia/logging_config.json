@@ -14,7 +14,8 @@
     "fileHandler": {
       "class": "logging.FileHandler",
       "formatter": "fileFormatter",
-      "filename": "data.log"
+      "filename": "data.log",
+      "mode": "w"
     },
     "consoleHandler": {
       "level": "INFO",
