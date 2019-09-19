@@ -46,6 +46,6 @@ CAUTION — First 100 queries per day are free, additional requests cost $5 per 
 
 ### Usage
 ```
-cd HackQ-Trivia/hackq_trivia
-python3 hq_main.py
+cd HackQ-Trivia
+python3 -m hackq_trivia.hq_main
 ```
