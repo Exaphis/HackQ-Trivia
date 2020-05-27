@@ -31,7 +31,7 @@ class SearcherTest(unittest.TestCase):
     def test_fetch_error(self):
         with self.assertLogs() as cm:
             self.loop.run_until_complete(self.searcher.fetch("http://aaaa.aaa"))
-        self.assertEqual(cm.output, ['ERROR:hackq_trivia.searcher:Server timeout/error to http://aaaa.aaa'])
+        self.assertIn('ERROR:hackq_trivia.searcher:Server timeout/error to http://aaaa.aaa', cm.output)
 
     def test_get_google_links(self):
         links = self.searcher.get_google_links("test test test test", 5)

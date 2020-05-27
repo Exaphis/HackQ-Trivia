@@ -26,8 +26,9 @@ class Searcher:
         try:
             async with self.session.get(url, timeout=self.timeout) as response:
                 return await response.text()
-        except Exception:
+        except Exception as e:
             self.logger.error(f"Server timeout/error to {url}")
+            self.logger.error(e)
             return ""
 
     async def fetch_multiple(self, urls):

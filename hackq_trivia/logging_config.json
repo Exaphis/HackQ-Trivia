@@ -7,7 +7,7 @@
       "datefmt": "%m-%d %H:%M"
     },
     "consoleFormatter": {
-      "format": "%(levelname)-8s %(pre)s%(message)s%(post)s"
+      "format": "%(pre)s%(message)s%(post)s"
     }
   },
   "handlers": {
