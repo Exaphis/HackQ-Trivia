@@ -41,20 +41,28 @@ class QuestionHandler:
         choices = sum(choice_groups, [])
 
         # Step 1: Search Google for results
+        keyword_start_time = time()
         question_keywords = self.find_keywords(question)
         if not self.simplified_output:
             self.logger.info(f"Question keywords: {question_keywords}")
+        self.logger.debug(f"Keywords took {round(time() - keyword_start_time, 2)} seconds")
 
+        google_start_time = time()
         links = self.searcher.get_google_links(" ".join(question_keywords), 5)
+        self.logger.debug(f"Google took {round(time() - google_start_time, 2)} seconds")
 
         # Step 2: Fetch links and clean up text
+        fetch_start_time = time()
         link_texts = [Searcher.html_to_visible_text(html).translate(QuestionHandler.PUNCTUATION_TO_NONE)
                       for html in await self.searcher.fetch_multiple(links)]
+        self.logger.debug(f"Fetching took {round(time() - fetch_start_time, 2)} seconds")
 
         # Step 3: Find best answer for all search methods
+        post_process_start_time = time()
         for search_method in self.search_methods_to_use:
             self.logger.info(search_method(link_texts, choices, choice_groups, reverse),
                              extra={"pre": colorama.Fore.BLUE})
+        self.logger.debug(f"Post-processing took {round(time() - post_process_start_time, 2)} seconds")
 
         self.logger.info(f"Search took {round(time() - start_time, 2)} seconds")
 
@@ -72,7 +80,7 @@ class QuestionHandler:
         counts = {answer: 0 for answer in answers}
         for text in texts:
             for answer in answers:
-                counts[answer] += text.count(" " + answer.lower() + " ")
+                counts[answer] += text.count(f" {answer.lower()} ")
 
         self.logger.info(counts)
         return self.__get_best_answer(counts, answer_groups, reverse)
@@ -92,7 +100,7 @@ class QuestionHandler:
         for text in texts:
             for answer in answers:
                 for keyword in self.find_keywords(answer, sentences=False):
-                    counts[answer] += text.count(" " + keyword.lower() + " ")
+                    counts[answer] += text.count(f" {keyword.lower()} ")
 
         self.logger.info(counts)
         return self.__get_best_answer(counts, answer_groups, reverse)
