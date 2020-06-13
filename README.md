@@ -49,3 +49,6 @@ CAUTION — First 100 queries per day are free, additional requests cost $5 per 
 cd HackQ-Trivia
 python3 -m hackq_trivia.hq_main
 ```
+
+### Screenshots
+![](https://raw.githubusercontent.com/Exaphis/HackQ-Trivia/master/screenshots/1.png)
