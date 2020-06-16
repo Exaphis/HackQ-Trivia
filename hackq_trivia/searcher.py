@@ -6,19 +6,36 @@ from html import unescape
 import aiohttp
 import bs4
 import googleapiclient.discovery
+import requests
 from unidecode import unidecode
 
 from hackq_trivia.config import config
 
 
+class InvalidSearchServiceError(Exception):
+    """Raise when search service specified in config is not recognized."""
+
+
 class Searcher:
     HEADERS = {"User-Agent": "HQbot"}
+    BING_ENDPOINT = 'https://api.cognitive.microsoft.com/bing/v7.0/search'
 
     def __init__(self):
         self.timeout = config.getfloat("CONNECTION", "Timeout")
-        self.cse_id = config.get("CONNECTION", "GoogleCseId")
-        api_key = config.get("CONNECTION", "GoogleApiKey")
-        self.search_service = googleapiclient.discovery.build("customsearch", "v1", developerKey=api_key)
+        self.search_service = config.get("SEARCH", "Service")
+
+        if self.search_service == "Bing":
+            api_key = config.get("SEARCH", "BingApiKey")
+            self.search_headers = {"Ocp-Apim-Subscription-Key": api_key}
+            self.search_func = self.get_bing_links
+        elif self.search_service == "Google":
+            self.cse_id = config.get("SEARCH", "GoogleCseId")
+            api_key = config.get("SEARCH", "GoogleApiKey")
+            self.google_service = googleapiclient.discovery.build("customsearch", "v1", developerKey=api_key)
+            self.search_func = self.get_google_links
+        else:
+            raise InvalidSearchServiceError(f"Search service type {self.search_service} was not recognized.")
+
         self.session = aiohttp.ClientSession(headers=Searcher.HEADERS)
         self.logger = logging.getLogger(__name__)
 
@@ -39,9 +56,24 @@ class Searcher:
     async def close(self):
         await self.session.close()
 
+    def get_search_links(self, query, num_results):
+        self.search_func(query, num_results)
+
     def get_google_links(self, query, num_results):
-        response = self.search_service.cse().list(q=query, cx=self.cse_id, num=num_results).execute()
+        response = self.google_service.cse().list(q=query, cx=self.cse_id, num=num_results).execute()
         return list(map(operator.itemgetter("link"), response["items"]))
+
+    def get_bing_links(self, query, num_results):
+        # could be using aiohttp here...
+        search_params = {"q": query, "count": num_results}
+        resp = requests.get(self.BING_ENDPOINT, headers=self.search_headers, params=search_params)
+
+        if resp.status_code != requests.codes.ok:
+            logging.error(f"Bing search failed with status code {resp.status_code}")
+            logging.error(resp.json())
+            return []
+
+        return list(map(operator.itemgetter('url'), resp.json()['webPages']['value']))
 
     @staticmethod
     def html_to_visible_text(html):

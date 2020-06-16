@@ -17,18 +17,27 @@ aiodns
 cchardet
 pyjwt
 ```
-### Installation
+
+## Installation
 ```
 git clone https://github.com/Exaphis/HackQ-Trivia.git
 cd HackQ-Trivia
 pip install -r requirements.txt
 ```
-#### Bearer token
+### Bearer token
 It can be found by sniffing the traffic on your phone. The bearer token is easily found on an emulator, since they are easy to root and most use Android versions without certificate pinning. Popular tools used to obtain bearer tokens are Charles, Fiddler, and Burp Suite.
  
 Paste your bearer token after `Bearer` in `hq_config.conf`, all within one line.
 
-#### Google Custom Search Engine API key
+### Search APIs
+
+HackQ-Trivia can utilize either Google or Bing search APIs.
+
+The search settings are under the `[SEARCH]` section in `hq_config.conf`.
+* To use the Google Custom Search Engine API, set `Service = Google`.
+* To use the Bing Web Search API, set `Service = Bing`.
+
+#### Google Custom Search Engine API Key
 CAUTION — First 100 queries per day are free, additional requests cost $5 per 1000 queries.
 * Obtain an API key from https://developers.google.com/custom-search/v1/overview
 * Paste it after `GoogleApiKey` in `hq_config.conf`
@@ -43,6 +52,16 @@ CAUTION — First 100 queries per day are free, additional requests cost $5 per 
 * Copy the `Search engine ID` to clipboard
 * Paste it after `GoogleCseId` in `hq_config.conf`
 
+
+### Bing Search
+* Create a free account at https://azure.microsoft.com/
+* Enter the Azure portal
+* Create a `Bing Search` resource from the Marketplace
+* Wait for setup...
+* Open the service from your dashboard
+* Open `Keys and Endpoint`
+* Copy `Key 1` or `Key 2` to clipboard
+* Paste it after `BingApiKey` in `hq_config.conf`
 
 ### Usage
 ```
