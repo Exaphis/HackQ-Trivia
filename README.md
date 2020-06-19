@@ -43,6 +43,7 @@ The search settings are under the `[SEARCH]` section in `hq_config.conf`.
 * To use the Google Custom Search Engine API, set `Service = Google`.
 * To use the Bing Web Search API, set `Service = Bing`.
 
+### Google Search
 #### Google Custom Search Engine API Key
 CAUTION — First 100 queries per day are free, additional requests cost $5 per 1000 queries.
 * Obtain an API key from https://developers.google.com/custom-search/v1/overview
