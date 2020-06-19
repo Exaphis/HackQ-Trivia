@@ -48,8 +48,8 @@ class QuestionHandler:
         self.logger.debug(f"Keywords took {round(time() - keyword_start_time, 2)} seconds")
 
         google_start_time = time()
-        links = self.searcher.get_google_links(" ".join(question_keywords), 5)
-        self.logger.debug(f"Google took {round(time() - google_start_time, 2)} seconds")
+        links = self.searcher.get_search_links(" ".join(question_keywords), 5)
+        self.logger.debug(f"Web search took {round(time() - google_start_time, 2)} seconds")
 
         # Step 2: Fetch links and clean up text
         fetch_start_time = time()

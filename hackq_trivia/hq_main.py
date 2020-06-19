@@ -14,7 +14,7 @@ from hackq_trivia.config import config
 from hackq_trivia.live_show import LiveShow
 
 
-class BearerException(Exception):
+class BearerError(Exception):
     """Raise when bearer token is invalid/expired"""
 
 
@@ -89,13 +89,13 @@ class HackQ:
         try:
             bearer_info = jwt.decode(self.bearer, verify=False)
         except jwt.exceptions.DecodeError:
-            raise BearerException("Bearer invalid. Please check your settings.ini.")
+            raise BearerError("Bearer invalid. Please check your settings.ini.")
 
         expiration_time = datetime.utcfromtimestamp(bearer_info["exp"])
         issue_time = datetime.utcfromtimestamp(bearer_info["iat"])
 
         if datetime.utcnow() > expiration_time:
-            raise BearerException("Bearer expired. Please obtain another from your device.")
+            raise BearerError("Bearer expired. Please obtain another from your device.")
 
         if self.show_bearer_info:
             exp_local = expiration_time + self.local_utc_offset
@@ -133,7 +133,7 @@ class HackQ:
 
         if "error" in response:
             if response["error"] == "Auth not valid":
-                raise BearerException("Bearer invalid. Please check your settings.ini.")
+                raise BearerError("Bearer invalid. Please check your settings.ini.")
             else:
                 self.logger.warning(f"Error in server response: {response['error']}")
                 time.sleep(1)
