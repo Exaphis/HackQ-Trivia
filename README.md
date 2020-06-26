@@ -70,6 +70,7 @@ CAUTION — First 100 queries per day are free, additional requests cost $5 per 
 * Paste it after `BingApiKey` in `hq_config.conf`
 
 ### Usage
+Make sure you are in the `HackQ-Trivia` folder, not `hackq_trivia`.
 ```
 python3 -m hackq_trivia.hq_main
 ```
