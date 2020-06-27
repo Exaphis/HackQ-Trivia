@@ -40,16 +40,17 @@ class QuestionHandler:
                          for choice in original_choices]
         choices = sum(choice_groups, [])
 
-        # Step 1: Search Google for results
+        # Step 1: Search web for results
         keyword_start_time = time()
         question_keywords = self.find_keywords(question)
         if not self.simplified_output:
             self.logger.info(f"Question keywords: {question_keywords}")
         self.logger.debug(f"Keywords took {round(time() - keyword_start_time, 2)} seconds")
 
-        google_start_time = time()
+        search_start_time = time()
         links = self.searcher.get_search_links(" ".join(question_keywords), 5)
-        self.logger.debug(f"Web search took {round(time() - google_start_time, 2)} seconds")
+        self.logger.debug(f"Web search took {round(time() - search_start_time, 2)} seconds")
+        self.logger.debug(f"Found links: {links}")
 
         # Step 2: Fetch links and clean up text
         fetch_start_time = time()

@@ -59,7 +59,7 @@ class Searcher:
         await self.session.close()
 
     def get_search_links(self, query, num_results):
-        self.search_func(query, num_results)
+        return self.search_func(query, num_results)
 
     def get_google_links(self, query, num_results):
         response = self.google_service.cse().list(q=query, cx=self.google_cse_id, num=num_results).execute()
