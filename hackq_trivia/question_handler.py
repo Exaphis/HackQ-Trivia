@@ -32,7 +32,7 @@ class QuestionHandler:
 
         question_lower = question.lower()
 
-        reverse = 'NOT' in question or 'NEVER' in question or \
+        reverse = 'NOT' in question or 'NEVER' in question or 'NEITHER' in question or \
                   ('least' in question_lower and 'at least' not in question_lower)
 
         choice_groups = [[choice.translate(QuestionHandler.PUNCTUATION_TO_NONE),

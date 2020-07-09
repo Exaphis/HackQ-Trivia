@@ -9,8 +9,11 @@ async def test():
     # fails because all pages say foot/footwear instead of feet
     # await qh.answer_question('In the 19th century, where were spats typically worn?',
     #                          ['Ears', 'Arms', 'Feet'])
+
     # await qh.answer_question('Which of these games is played on a court?',
     #                          ['Basketball', 'Super Mario Kart', 'Uno'])
+
+    # for is removed as a stopword
     await qh.answer_question("What do NEITHER of the N's in CNN stand for?",
                              ['News', 'Netflix', 'Network'])
     await qh.close()
