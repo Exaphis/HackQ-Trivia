@@ -12,12 +12,12 @@ from hackq_trivia.searcher import Searcher
 
 
 class QuestionHandler:
-    STOPWORDS = set(nltk.corpus.stopwords.words("english")) - {"most", "least"}
+    STOPWORDS = set(nltk.corpus.stopwords.words('english')) - {'most', 'least'}
     PUNCTUATION_TO_NONE = str.maketrans({key: None for key in string.punctuation})
-    PUNCTUATION_TO_SPACE = str.maketrans({key: " " for key in string.punctuation})
+    PUNCTUATION_TO_SPACE = str.maketrans({key: ' ' for key in string.punctuation})
 
     def __init__(self):
-        self.simplified_output = config.getboolean("LIVE", "SimplifiedOutput")
+        self.simplified_output = config.getboolean('LIVE', 'SimplifiedOutput')
         self.searcher = Searcher()
         self.perceptron_tagger = nltk.tag.perceptron.PerceptronTagger()
         self.search_methods_to_use = [self.__method1, self.__method2]
@@ -27,13 +27,13 @@ class QuestionHandler:
         await self.searcher.close()
 
     async def answer_question(self, question, original_choices):
-        self.logger.info("Searching...")
+        self.logger.info('Searching...')
         start_time = time()
 
         question_lower = question.lower()
 
-        reverse = "NOT" in question or "NEVER" in question or \
-                  ("least" in question_lower and "at least" not in question_lower)
+        reverse = 'NOT' in question or 'NEVER' in question or \
+                  ('least' in question_lower and 'at least' not in question_lower)
 
         choice_groups = [[choice.translate(QuestionHandler.PUNCTUATION_TO_NONE),
                           choice.translate(QuestionHandler.PUNCTUATION_TO_SPACE)]
@@ -44,28 +44,28 @@ class QuestionHandler:
         keyword_start_time = time()
         question_keywords = self.find_keywords(question)
         if not self.simplified_output:
-            self.logger.info(f"Question keywords: {question_keywords}")
-        self.logger.debug(f"Keywords took {round(time() - keyword_start_time, 2)} seconds")
+            self.logger.info(f'Question keywords: {question_keywords}')
+        self.logger.debug(f'Keywords took {round(time() - keyword_start_time, 2)} seconds')
 
         search_start_time = time()
-        links = self.searcher.get_search_links(" ".join(question_keywords), 5)
-        self.logger.debug(f"Web search took {round(time() - search_start_time, 2)} seconds")
-        self.logger.debug(f"Found links: {links}")
+        links = self.searcher.get_search_links(' '.join(question_keywords), 5)
+        self.logger.debug(f'Web search took {round(time() - search_start_time, 2)} seconds')
+        self.logger.debug(f'Found links: {links}')
 
         # Step 2: Fetch links and clean up text
         fetch_start_time = time()
         link_texts = [Searcher.html_to_visible_text(html).translate(QuestionHandler.PUNCTUATION_TO_NONE)
                       for html in await self.searcher.fetch_multiple(links)]
-        self.logger.debug(f"Fetching took {round(time() - fetch_start_time, 2)} seconds")
+        self.logger.debug(f'Fetching took {round(time() - fetch_start_time, 2)} seconds')
 
         # Step 3: Find best answer for all search methods
         post_process_start_time = time()
         for search_method in self.search_methods_to_use:
             self.logger.info(search_method(link_texts, choices, choice_groups, reverse),
-                             extra={"pre": colorama.Fore.BLUE})
-        self.logger.debug(f"Post-processing took {round(time() - post_process_start_time, 2)} seconds")
+                             extra={'pre': colorama.Fore.BLUE})
+        self.logger.debug(f'Post-processing took {round(time() - post_process_start_time, 2)} seconds')
 
-        self.logger.info(f"Search took {round(time() - start_time, 2)} seconds")
+        self.logger.info(f'Search took {round(time() - start_time, 2)} seconds')
 
     def __method1(self, texts, answers, answer_groups, reverse):
         """
@@ -76,12 +76,12 @@ class QuestionHandler:
         :param reverse: True if the best answer occurs the least, False otherwise
         :return: Answer that occurs the most/least in the texts, empty string if there is a tie
         """
-        self.logger.info("Running method 1")
+        self.logger.info('Running method 1')
 
         counts = {answer: 0 for answer in answers}
         for text in texts:
             for answer in answers:
-                counts[answer] += text.count(f" {answer.lower()} ")
+                counts[answer] += text.count(f' {answer.lower()} ')
 
         self.logger.info(counts)
         return self.__get_best_answer(counts, answer_groups, reverse)
@@ -95,13 +95,13 @@ class QuestionHandler:
         :param reverse: True if the best answer occurs the least, False otherwise
         :return: Answer that occurs the most/least in the texts, empty string if there is a tie
         """
-        self.logger.info("Running method 2")
+        self.logger.info('Running method 2')
 
         counts = {answer: 0 for answer in answers}
         for text in texts:
             for answer in answers:
                 for keyword in self.find_keywords(answer, sentences=False):
-                    counts[answer] += text.count(f" {keyword.lower()} ")
+                    counts[answer] += text.count(f' {keyword.lower()} ')
 
         self.logger.info(counts)
         return self.__get_best_answer(counts, answer_groups, reverse)
@@ -125,14 +125,14 @@ class QuestionHandler:
             text = " ".join(sentence[0].lower() + sentence[1:] for sentence in sentences)
 
         # Remove all punctuation except quotes
-        text = text.translate(str.maketrans({key: None for key in set(string.punctuation) - {"\"", "'"}}))
+        text = text.translate(str.maketrans({key: None for key in set(string.punctuation) - {'"', "'"}}))
 
         # If a match is encountered:
         #   Add entry to keyword_indices
         #   Return string containing spaces of same length as the match to replace match with
         def process_match(match: Match[str]):
             keyword_indices[match[1]] = match.start()
-            return " " * len(match[0])
+            return ' ' * len(match[0])
 
         # Find words in quotes and replace words in quotes with whitespace 
         # of same length to avoid matching words multiple times
@@ -144,7 +144,7 @@ class QuestionHandler:
         text = re.sub(r"([A-Z][a-z]+(?=\s[A-Z])(?:\s[A-Z][a-z']+)+)", process_match, text)
 
         # Find remaining words that are not stopwords
-        for m in re.finditer(r"\S+", text):
+        for m in re.finditer(r'\S+', text):
             if m[0] not in self.STOPWORDS:
                 keyword_indices[m[0]] = m.start()
 
@@ -155,7 +155,7 @@ class QuestionHandler:
 
     def find_nouns(self, text, num_words, reverse=False):
         tokens = nltk.word_tokenize(text)
-        tags = [tag for tag in self.perceptron_tagger.tag(tokens) if tag[1] != "POS"]
+        tags = [tag for tag in self.perceptron_tagger.tag(tokens) if tag[1] != 'POS']
 
         if not self.simplified_output:
             self.logger.info(tags)
@@ -169,14 +169,14 @@ class QuestionHandler:
             tag_type = tag[1]
             word = tag[0]
 
-            if "NN" not in tag_type and len(consecutive_nouns) > 0:
-                nouns.append(" ".join(consecutive_nouns))
+            if 'NN' not in tag_type and len(consecutive_nouns) > 0:
+                nouns.append(' '.join(consecutive_nouns))
                 consecutive_nouns = []
-            elif "NN" in tag_type:
+            elif 'NN' in tag_type:
                 consecutive_nouns.append(word)
 
         if len(consecutive_nouns) > 0:
-            nouns.append(" ".join(consecutive_nouns))
+            nouns.append(' '.join(consecutive_nouns))
 
         return nouns
 
@@ -190,4 +190,4 @@ class QuestionHandler:
         # Make sure the scores are not all 0 and the best value doesn't occur more than once
         if not all(c == 0 for c in scores.values()) and list(scores.values()).count(best_value) == 1:
             return min(scores, key=scores.get) if reverse else max(scores, key=scores.get)
-        return ""
+        return ''

@@ -6,13 +6,16 @@ from hackq_trivia.hq_main import HackQ
 
 async def test():
     qh = QuestionHandler()
-    # await qh.answer_question("Which of these shows just announced three new cast members?",
-    #                          ["Saturday Night Live", "M*A*S*H", "Supernatural"])
-    await qh.answer_question("In the 19th century, where were spats typically worn?",
-                             ["Ears", "Arms", "Feet"])
+    # fails because all pages say foot/footwear instead of feet
+    # await qh.answer_question('In the 19th century, where were spats typically worn?',
+    #                          ['Ears', 'Arms', 'Feet'])
+    # await qh.answer_question('Which of these games is played on a court?',
+    #                          ['Basketball', 'Super Mario Kart', 'Uno'])
+    await qh.answer_question("What do NEITHER of the N's in CNN stand for?",
+                             ['News', 'Netflix', 'Network'])
     await qh.close()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     HackQ.init_root_logger()
 
     asyncio.run(test())

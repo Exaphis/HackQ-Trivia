@@ -35,7 +35,7 @@ def main():
 
         now = time()
         local_utc_offset = datetime.fromtimestamp(now) - datetime.utcfromtimestamp(now)
-        exp_time = datetime.strptime(verify_resp['expires'], "%Y-%m-%dT%H:%M:%S.%fZ")
+        exp_time = datetime.strptime(verify_resp['expires'], '%Y-%m-%dT%H:%M:%S.%fZ')
         exp_time += local_utc_offset
 
         print('Your verification ID is:')
