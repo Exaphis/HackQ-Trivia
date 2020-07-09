@@ -38,17 +38,21 @@ class Searcher:
         else:
             raise InvalidSearchServiceError(f"Search service type {self.search_service} was not recognized.")
 
-        self.session = aiohttp.ClientSession(headers=Searcher.HEADERS)
+        client_timeout = aiohttp.ClientTimeout(total=self.timeout)
+        self.session = aiohttp.ClientSession(headers=Searcher.HEADERS, timeout=client_timeout)
         self.logger = logging.getLogger(__name__)
 
     async def fetch(self, url):
         try:
             async with self.session.get(url, timeout=self.timeout) as response:
                 return await response.text()
+        except asyncio.TimeoutError:
+            self.logger.error(f"Server timeout to {url}")
         except Exception as e:
-            self.logger.error(f"Server timeout/error to {url}")
+            self.logger.error(f"Server error to {url}")
             self.logger.error(e)
-            return ""
+
+        return ""
 
     async def fetch_multiple(self, urls):
         tasks = [asyncio.create_task(self.fetch(url)) for url in urls]

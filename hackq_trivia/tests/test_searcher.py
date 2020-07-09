@@ -24,14 +24,29 @@ class SearcherTest(unittest.TestCase):
 
     def test_fetch_multiple(self):
         resps = self.loop.run_until_complete(self.searcher.fetch_multiple(["http://httpbin.org/user-agent"] * 5))
+        self.assertEqual(len(resps), 5)
         for resp in resps:
             resp = json.loads(resp)
             self.assertEqual(resp["user-agent"], Searcher.HEADERS["User-Agent"])
 
     def test_fetch_error(self):
-        with self.assertLogs() as cm:
+        with self.assertLogs() as log_cm:
             self.loop.run_until_complete(self.searcher.fetch("http://aaaa.aaa"))
-        self.assertIn('ERROR:hackq_trivia.searcher:Server timeout/error to http://aaaa.aaa', cm.output)
+        self.assertIn('ERROR:hackq_trivia.searcher:Server error to http://aaaa.aaa', log_cm.output)
+
+    def test_fetch_delay(self):
+        max_timeout = self.searcher.timeout
+        fail_url = f"http://httpbin.org/delay/{max_timeout + 1}"
+
+        with self.assertLogs() as log_cm:
+            resps = self.loop.run_until_complete(
+                self.searcher.fetch_multiple(["http://httpbin.org/delay/0", fail_url])
+            )
+
+            self.assertTrue(resps[0])
+            self.assertFalse(resps[1])
+
+        self.assertEqual([f'ERROR:hackq_trivia.searcher:Server timeout to {fail_url}'], log_cm.output)
 
     def test_get_google_links(self):
         links = self.searcher.get_google_links("test test test test", 5)
