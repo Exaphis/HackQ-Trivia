@@ -27,8 +27,10 @@ pip install -r requirements.txt
 
 The easiest way to find you bearer token is to run `bearer_finder.py`.
 
+Make sure you are in the `HackQ-Trivia` folder, not `hackq_trivia`.
+
 ```
-python3 hackq_trivia/bearer_finder.py
+python3 -m hackq_trivia.bearer_finder
 ```
 
 Alternatively, it can be found by sniffing the traffic on your phone. The bearer token is easily found on an emulator, since they are easy to root and most use Android versions without certificate pinning. Popular tools used to obtain bearer tokens are Charles, Fiddler, and Burp Suite.
