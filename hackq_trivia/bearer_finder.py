@@ -1,7 +1,9 @@
 import requests
 from datetime import datetime
+import logging
 from time import time
 
+from hackq_trivia.hq_main import init_root_logger
 
 HQ_URL = 'https://api-quiz.hype.space/'
 HQ_REQUEST_HEADERS = {'x-hq-client': 'Android/1.40.0'}
@@ -12,9 +14,13 @@ class HQResponseError(Exception):
 
 
 def hq_post(endpoint, data):
+    logger.debug(f'POST to {HQ_URL}{endpoint} w/ data {data}')
+
     resp = requests.post(f'{HQ_URL}{endpoint}',
                          headers=HQ_REQUEST_HEADERS,
                          data=data).json()
+
+    logger.debug(f'resp: {resp}')
 
     if 'errorCode' in resp:
         raise HQResponseError(f'Error code {resp["errorCode"]}: {resp["error"]}')
@@ -54,4 +60,6 @@ def main():
 
 
 if __name__ == '__main__':
+    init_root_logger()
+    logger = logging.getLogger(__name__)
     main()

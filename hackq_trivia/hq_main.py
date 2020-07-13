@@ -18,11 +18,45 @@ class BearerError(Exception):
     """Raise when bearer token is invalid/expired"""
 
 
+def init_root_logger():
+    import os
+
+    class LogFilterColor(logging.Filter):
+        def filter(self, record):
+            if 'hackq' not in record.name and '__main__' not in record.name:
+                return None
+
+            if not hasattr(record, 'pre'):
+                record.pre = ''
+                record.post = ''
+            elif not hasattr(record, 'post'):
+                record.post = colorama.Style.RESET_ALL
+
+            return record
+
+    log_filename = config.get('LOGGING', 'FILE')
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    if not os.path.isabs(log_filename):
+        log_filename = os.path.join(script_dir, log_filename)
+
+    with open(os.path.join(script_dir, 'logging_config.json')) as log_conf_file:
+        log_conf_dict = json.load(log_conf_file)
+        log_conf_dict['handlers']['fileHandler']['filename'] = log_filename
+        log_conf_dict['filters']['LogFilterColor']['()'] = LogFilterColor
+
+        logging.config.dictConfig(log_conf_dict)
+
+
+def download_nltk_resources():
+    for resource in ['stopwords', 'averaged_perceptron_tagger', 'punkt']:
+        nltk.download(resource, quiet=True)
+
+
 class HackQ:
-    HQ_URL = f'https://api-quiz.hype.space/shows/schedule?type=hq'
+    HQ_SCHEDULE_URL = f'https://api-quiz.hype.space/shows/schedule?type=hq'
 
     def __init__(self):
-        HackQ.download_nltk_resources()
+        download_nltk_resources()
         colorama.init()
 
         self.bearer = config.get('CONNECTION', 'BEARER')
@@ -41,7 +75,7 @@ class HackQ:
         self.session = requests.Session()
         self.session.headers.update(self.headers)
 
-        self.init_root_logger()
+        init_root_logger()
         self.logger = logging.getLogger(__name__)
 
         # Find local UTC offset
@@ -50,40 +84,6 @@ class HackQ:
 
         self.validate_bearer()
         self.logger.info('HackQ-Trivia initialized.\n', extra={'pre': colorama.Fore.GREEN})
-
-    @staticmethod
-    def download_nltk_resources():
-        for resource in {'stopwords', 'averaged_perceptron_tagger', 'punkt'}:
-            nltk.download(resource, quiet=True)
-
-    @staticmethod
-    def init_root_logger():
-        import os
-
-        class LogFilterColor(logging.Filter):
-            def filter(self, record):
-                if 'hackq' not in record.name and '__main__' not in record.name:
-                    return None
-
-                if not hasattr(record, 'pre'):
-                    record.pre = ''
-                    record.post = ''
-                elif not hasattr(record, 'post'):
-                    record.post = colorama.Style.RESET_ALL
-
-                return record
-
-        log_filename = config.get('LOGGING', 'FILE')
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        if not os.path.isabs(log_filename):
-            log_filename = os.path.join(script_dir, log_filename)
-
-        with open(os.path.join(script_dir, 'logging_config.json')) as log_conf_file:
-            log_conf_dict = json.load(log_conf_file)
-            log_conf_dict['handlers']['fileHandler']['filename'] = log_filename
-            log_conf_dict['filters']['LogFilterColor']['()'] = LogFilterColor
-
-            logging.config.dictConfig(log_conf_dict)
 
     def validate_bearer(self):
         try:
@@ -124,7 +124,7 @@ class HackQ:
         :return: The show's WebSocket URI if it is live, else None
         """
         try:
-            response = self.session.get(self.HQ_URL, timeout=self.timeout).json()
+            response = self.session.get(self.HQ_SCHEDULE_URL, timeout=self.timeout).json()
             self.logger.debug(response)
         except json.decoder.JSONDecodeError:
             self.logger.info('Server response not JSON, retrying...', extra={'pre': colorama.Fore.RED})

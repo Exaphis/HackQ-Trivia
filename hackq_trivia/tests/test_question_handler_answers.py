@@ -1,7 +1,7 @@
 import asyncio
 
 from hackq_trivia.question_handler import QuestionHandler
-from hackq_trivia.hq_main import HackQ
+from hackq_trivia.hq_main import init_root_logger
 
 
 async def test():
@@ -19,6 +19,6 @@ async def test():
     await qh.close()
 
 if __name__ == '__main__':
-    HackQ.init_root_logger()
+    init_root_logger()
 
     asyncio.run(test())
