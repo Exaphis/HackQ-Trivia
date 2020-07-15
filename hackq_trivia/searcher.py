@@ -67,19 +67,25 @@ class Searcher:
 
     def get_google_links(self, query, num_results):
         response = self.google_service.cse().list(q=query, cx=self.google_cse_id, num=num_results).execute()
+        self.logger.debug(f'google: {query}, n={num_results}')
+        self.logger.debug(response)
         return list(map(operator.itemgetter('link'), response['items']))
 
     def get_bing_links(self, query, num_results):
         # could be using aiohttp here...
         search_params = {'q': query, 'count': num_results}
         resp = requests.get(self.BING_ENDPOINT, headers=self.bing_headers, params=search_params)
+        resp_data = resp.json()
 
         if resp.status_code != requests.codes.ok:
             logging.error(f'Bing search failed with status code {resp.status_code}')
-            logging.error(resp.json())
+            logging.error(resp_data)
             return []
 
-        return list(map(operator.itemgetter('url'), resp.json()['webPages']['value']))
+        self.logger.debug(f'bing: {query}, n={num_results}')
+        self.logger.debug(resp_data)
+
+        return list(map(operator.itemgetter('url'), resp_data['webPages']['value']))
 
     @staticmethod
     def html_to_visible_text(html):
