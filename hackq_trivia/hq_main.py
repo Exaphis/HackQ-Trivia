@@ -49,14 +49,15 @@ def init_root_logger():
 
 def download_nltk_resources():
     for resource in ['stopwords', 'averaged_perceptron_tagger', 'punkt']:
-        nltk.download(resource, quiet=True)
+        nltk.download(resource, raise_on_error=True)
 
 
 class HackQ:
     HQ_SCHEDULE_URL = f'https://api-quiz.hype.space/shows/schedule?type=hq'
 
     def __init__(self):
-        download_nltk_resources()
+        if config.getboolean('MAIN', 'DownloadNLTKResources'):
+            download_nltk_resources()
         colorama.init()
 
         self.bearer = config.get('CONNECTION', 'BEARER')

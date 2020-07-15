@@ -12,16 +12,16 @@ from hackq_trivia.searcher import Searcher
 
 
 class QuestionHandler:
-    STOPWORDS = set(nltk.corpus.stopwords.words('english')) - {'most', 'least'}
-    PUNCTUATION_TO_NONE = str.maketrans({key: None for key in string.punctuation})
-    PUNCTUATION_TO_SPACE = str.maketrans({key: ' ' for key in string.punctuation})
-
     def __init__(self):
         self.simplified_output = config.getboolean('LIVE', 'SimplifiedOutput')
         self.searcher = Searcher()
         self.perceptron_tagger = nltk.tag.perceptron.PerceptronTagger()
         self.search_methods_to_use = [self.__method1, self.__method2]
         self.logger = logging.getLogger(__name__)
+
+        self.stopwords = set(nltk.corpus.stopwords.words('english')) - {'most', 'least'}
+        self.punctuation_to_none = str.maketrans({key: None for key in string.punctuation})
+        self.punctuation_to_space = str.maketrans({key: ' ' for key in string.punctuation})
 
     async def close(self):
         await self.searcher.close()
@@ -35,8 +35,8 @@ class QuestionHandler:
         reverse = 'NOT' in question or 'NEVER' in question or 'NEITHER' in question or \
                   ('least' in question_lower and 'at least' not in question_lower)
 
-        choice_groups = [[choice.translate(QuestionHandler.PUNCTUATION_TO_NONE),
-                          choice.translate(QuestionHandler.PUNCTUATION_TO_SPACE)]
+        choice_groups = [[choice.translate(self.punctuation_to_none),
+                          choice.translate(self.punctuation_to_space)]
                          for choice in original_choices]
         choices = sum(choice_groups, [])
 
@@ -54,7 +54,7 @@ class QuestionHandler:
 
         # Step 2: Fetch links and clean up text
         fetch_start_time = time()
-        link_texts = [Searcher.html_to_visible_text(html).translate(QuestionHandler.PUNCTUATION_TO_NONE)
+        link_texts = [Searcher.html_to_visible_text(html).translate(self.punctuation_to_none)
                       for html in await self.searcher.fetch_multiple(links)]
         self.logger.debug(f'Fetching took {round(time() - fetch_start_time, 2)} seconds')
 
@@ -145,12 +145,12 @@ class QuestionHandler:
 
         # Find remaining words that are not stopwords
         for m in re.finditer(r'\S+', text):
-            if m[0] not in self.STOPWORDS:
+            if m[0] not in self.stopwords:
                 keyword_indices[m[0]] = m.start()
 
         # Return keywords, sorted by index of occurrence
         keywords = list(sorted(keyword_indices, key=keyword_indices.get))
-        # TODO: handle plural and singular
+        # TODO: handle plural and singular, see test_question_handler.py
         return keywords
 
     def find_nouns(self, text, num_words, reverse=False):
