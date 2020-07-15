@@ -113,11 +113,15 @@ class HackQ:
 
     def connect(self):
         while True:
-            websocket_uri = self.get_next_show_info()
+            try:
+                websocket_uri = self.get_next_show_info()
 
-            if websocket_uri is not None:
-                self.logger.info('Found WebSocket, connecting...\n', extra={'pre': colorama.Fore.GREEN})
-                asyncio.run(self.__connect_show(websocket_uri))
+                if websocket_uri is not None:
+                    self.logger.info('Found WebSocket, connecting...\n', extra={'pre': colorama.Fore.GREEN})
+                    asyncio.run(self.__connect_show(websocket_uri))
+            except KeyboardInterrupt:
+                self.logger.error('Interrupted, exiting...')
+                break
 
     def get_next_show_info(self):
         """
