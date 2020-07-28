@@ -14,6 +14,8 @@ from hackq_trivia.searcher import Searcher
 class QuestionHandler:
     def __init__(self):
         self.simplified_output = config.getboolean('LIVE', 'SimplifiedOutput')
+        self.num_sites = config.getint('SEARCH', 'NumSitesToSearch')
+
         self.searcher = Searcher()
         self.perceptron_tagger = nltk.tag.perceptron.PerceptronTagger()
         self.search_methods_to_use = [self.__method1, self.__method2]
@@ -48,7 +50,7 @@ class QuestionHandler:
         self.logger.debug(f'Keywords took {round(time() - keyword_start_time, 2)} seconds')
 
         search_start_time = time()
-        links = self.searcher.get_search_links(' '.join(question_keywords), 5)
+        links = self.searcher.get_search_links(' '.join(question_keywords), self.num_sites)
         self.logger.debug(f'Web search took {round(time() - search_start_time, 2)} seconds')
         self.logger.debug(f'Found links: {links}')
 
