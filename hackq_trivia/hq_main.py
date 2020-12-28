@@ -88,21 +88,24 @@ class HackQ:
 
     def validate_bearer(self):
         try:
-            bearer_info = jwt.decode(self.bearer, verify=False)
-        except jwt.exceptions.DecodeError:
-            raise BearerError('Bearer invalid. Please check your settings.ini.')
+            # verify and options args exist to support all versions of pyjwt
+            # iat/exp is not checked by pyjwt if verify_signature is False
+            bearer_info = jwt.decode(self.bearer, verify=False,
+                                     options={'verify_signature': False})
+        except jwt.exceptions.DecodeError as e:
+            raise BearerError('Bearer token decode failed. Please check your settings.ini.') from e
 
         expiration_time = datetime.utcfromtimestamp(bearer_info['exp'])
         issue_time = datetime.utcfromtimestamp(bearer_info['iat'])
 
         if datetime.utcnow() > expiration_time:
-            raise BearerError('Bearer expired. Please obtain another from your device.')
+            raise BearerError('Bearer token expired. Please obtain another from your device.')
 
         if self.show_bearer_info:
             exp_local = expiration_time + self.local_utc_offset
             iat_local = issue_time + self.local_utc_offset
 
-            self.logger.info('Bearer info:')
+            self.logger.info('Bearer token details:')
             self.logger.info(f'    Username: {bearer_info["username"]}')
             self.logger.info(f'    Issuing time: {iat_local.strftime("%Y-%m-%d %I:%M %p")}')
             self.logger.info(f'    Expiration time: {exp_local.strftime("%Y-%m-%d %I:%M %p")}')
@@ -138,7 +141,7 @@ class HackQ:
 
         if 'error' in response:
             if response['error'] == 'Auth not valid':
-                raise BearerError('Bearer invalid. Please check your settings.ini.')
+                raise BearerError('Bearer token rejected. Please check your settings.ini or use a VPN.')
             else:
                 self.logger.warning(f'Error in server response: {response["error"]}')
                 time.sleep(1)
