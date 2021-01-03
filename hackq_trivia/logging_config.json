@@ -4,7 +4,7 @@
   "formatters": {
     "fileFormatter": {
       "format": "%(asctime)s %(name)-12s %(levelname)-8s %(message)s",
-      "datefmt": "%m-%d %H:%M"
+      "datefmt": "%m-%d %H:%M:%S"
     },
     "consoleFormatter": {
       "format": "%(pre)s%(message)s%(post)s"

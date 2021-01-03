@@ -70,8 +70,7 @@ class HackQ:
                         'x-hq-country': 'US',
                         'x-hq-lang': 'en',
                         'x-hq-timezone': 'America/New_York',
-                        'Authorization': f'Bearer {self.bearer}',
-                        'Connection': 'close'}
+                        'Authorization': f'Bearer {self.bearer}'}
 
         self.session = requests.Session()
         self.session.headers.update(self.headers)
@@ -121,6 +120,7 @@ class HackQ:
 
                 if websocket_uri is not None:
                     self.logger.info('Found WebSocket, connecting...\n', extra={'pre': colorama.Fore.GREEN})
+                    self.logger.debug(websocket_uri)
                     asyncio.run(self.__connect_show(websocket_uri))
             except KeyboardInterrupt:
                 self.logger.error('Interrupted, exiting...')
