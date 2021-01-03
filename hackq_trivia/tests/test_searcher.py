@@ -54,21 +54,21 @@ class SearcherTest(unittest.TestCase):
 
     def test_get_google_links(self):
         links = self.searcher.get_google_links('test test test test', 5)
-        self.assertEqual(len(links), 5)
         print('Google links:')
         for link in links:
             print(link)
             parsed = urlparse(link)
             self.assertTrue(all((parsed.scheme, parsed.netloc)))
+        self.assertEqual(len(links), 5)
 
     def test_get_bing_links(self):
         links = self.searcher.get_bing_links('test test test test', 5)
-        self.assertEqual(len(links), 5)
         print('Bing links:')
         for link in links:
             print(link)
             parsed = urlparse(link)
             self.assertTrue(all((parsed.scheme, parsed.netloc)))
+        self.assertEqual(len(links), 5)
 
 
 if __name__ == '__main__':
