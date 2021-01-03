@@ -2,6 +2,7 @@ import asyncio
 import json.decoder
 import time
 from datetime import datetime
+import os
 
 import colorama
 import jwt
@@ -16,6 +17,16 @@ from hackq_trivia.live_show import LiveShow
 
 class BearerError(Exception):
     """Raise when bearer token is invalid/expired"""
+
+
+def next_available_name(base_name):
+    num = 1
+    curr_name = base_name.format(num)
+    while os.path.exists(curr_name):
+        num += 1
+        curr_name = base_name.format(num)
+
+    return curr_name
 
 
 def init_root_logger():
@@ -34,10 +45,17 @@ def init_root_logger():
 
             return record
 
-    log_filename = config.get('LOGGING', 'FILE')
+    log_filename = config.get('LOGGING', 'File')
     script_dir = os.path.dirname(os.path.abspath(__file__))
     if not os.path.isabs(log_filename):
         log_filename = os.path.join(script_dir, log_filename)
+
+    inc_filenames = config.getboolean('LOGGING', 'IncrementFileNames')
+    # check if name contains format string placeholder
+    if inc_filenames and log_filename.format(0) == log_filename:
+        inc_filenames = False
+    if inc_filenames:
+        log_filename = next_available_name(log_filename)
 
     with open(os.path.join(script_dir, 'logging_config.json')) as log_conf_file:
         log_conf_dict = json.load(log_conf_file)
@@ -48,7 +66,7 @@ def init_root_logger():
 
 
 def download_nltk_resources():
-    for resource in ['stopwords', 'averaged_perceptron_tagger', 'punkt']:
+    for resource in ('stopwords', 'averaged_perceptron_tagger', 'punkt'):
         nltk.download(resource, raise_on_error=True)
 
 
@@ -60,7 +78,7 @@ class HackQ:
             download_nltk_resources()
         colorama.init()
 
-        self.bearer = config.get('CONNECTION', 'BEARER')
+        self.bearer = config.get('CONNECTION', 'Bearer')
         self.timeout = config.getfloat('CONNECTION', 'Timeout')
         self.show_next_info = config.getboolean('MAIN', 'ShowNextShowInfo')
         self.exit_if_offline = config.getboolean('MAIN', 'ExitIfShowOffline')
