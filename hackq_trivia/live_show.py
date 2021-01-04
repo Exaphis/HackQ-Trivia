@@ -27,14 +27,25 @@ class LiveShow:
 
     async def connect(self, uri):
         session = aiohttp.ClientSession()
-        async with session.ws_connect(uri, headers=self.headers, heartbeat=5) as ws:
-            async for msg in ws:
-                # suppress incorrect type warning for msg in PyCharm
-                await self.handle_msg(msg)  # noqa
+
+        rejoin = True
+        while rejoin:
+            async with session.ws_connect(uri, headers=self.headers, heartbeat=5) as ws:
+                async for msg in ws:
+                    # suppress incorrect type warning for msg in PyCharm
+                    rejoin = await self.handle_msg(msg)  # noqa
+
+                    if rejoin:
+                        break
 
         self.logger.info('Disconnected.')
 
     async def handle_msg(self, msg):
+        """
+        Handles WebSocket frame received from HQ server.
+        :param msg: Message received by aiohttp
+        :return: True if the WS connection should be rejoined, False otherwise
+        """
         if msg.type == aiohttp.WSMsgType.TEXT:
             message = json.loads(msg.data)
             self.logger.debug(message)
@@ -43,8 +54,12 @@ class LiveShow:
                 raise ConnectionRefusedError('User ID/Bearer invalid. Please check your settings.ini.')
 
             message_type = message['type']
-            
-            if message_type == 'interaction' and self.show_chat and not self.block_chat:
+
+            if message_type == 'broadcastEnded' and \
+               message['reason'] == 'You are no longer in the game. Please join again.':
+                return True
+
+            elif message_type == 'interaction' and self.show_chat and not self.block_chat:
                 self.logger.info(f'{message["metadata"]["username"]}: {message["metadata"]["message"]}')
                 
             elif message_type == 'question':
@@ -77,3 +92,5 @@ class LiveShow:
                 self.block_chat = False
                 if self.show_chat:
                     self.logger.info('\n' * 5)
+
+        return False

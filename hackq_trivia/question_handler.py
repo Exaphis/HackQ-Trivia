@@ -61,6 +61,7 @@ class QuestionHandler:
         self.logger.debug(f'Fetching took {round(time() - fetch_start_time, 2)} seconds')
 
         # Step 3: Find best answer for all search methods
+        # TODO: async-ify the search methods
         post_process_start_time = time()
         for search_method in self.search_methods_to_use:
             self.logger.info(search_method(link_texts, choices, choice_groups, reverse),
