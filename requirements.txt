@@ -1,5 +1,4 @@
 colorama
-lomond
 requests
 aiohttp
 bs4

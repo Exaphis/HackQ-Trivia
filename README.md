@@ -6,7 +6,6 @@ Requires Python 3.7 or above.
 ### Dependencies
 ```
 colorama
-lomond
 requests
 aiohttp
 bs4
