@@ -1,7 +1,7 @@
 import asyncio
 import logging
-import operator
 from html import unescape
+from typing import Iterable, List
 
 import aiohttp
 import bs4
@@ -42,7 +42,7 @@ class Searcher:
         self.session = aiohttp.ClientSession(headers=Searcher.HEADERS, timeout=client_timeout)
         self.logger = logging.getLogger(__name__)
 
-    async def fetch(self, url):
+    async def fetch(self, url: str) -> str:
         try:
             async with self.session.get(url, timeout=self.timeout) as response:
                 return await response.text()
@@ -54,24 +54,26 @@ class Searcher:
 
         return ""
 
-    async def fetch_multiple(self, urls):
-        tasks = [asyncio.create_task(self.fetch(url)) for url in urls]
-        responses = await asyncio.gather(*tasks)
+    # no typing info for return value because https://github.com/python/typeshed/issues/2652
+    async def fetch_multiple(self, urls: Iterable[str]):
+        coroutines = [self.fetch(url) for url in urls]
+        responses = await asyncio.gather(*coroutines)
         return responses
 
-    async def close(self):
+    async def close(self) -> None:
         await self.session.close()
 
-    def get_search_links(self, query, num_results):
-        return self.search_func(query, num_results)
+    async def get_search_links(self, query: str, num_results: int) -> List[str]:
+        return await self.search_func(query, num_results)
 
-    def get_google_links(self, query, num_results):
+    async def get_google_links(self, query: str, num_results: int) -> List[str]:
         response = self.google_service.cse().list(q=query, cx=self.google_cse_id, num=num_results).execute()
         self.logger.debug(f'google: {query}, n={num_results}')
         self.logger.debug(response)
-        return list(map(operator.itemgetter('link'), response['items']))
 
-    def get_bing_links(self, query, num_results):
+        return [item['link'] for item in response['items']]
+
+    async def get_bing_links(self, query: str, num_results: int) -> List[str]:
         # could be using aiohttp here...
         search_params = {'q': query, 'count': num_results}
         resp = requests.get(self.BING_ENDPOINT, headers=self.bing_headers, params=search_params)
@@ -85,7 +87,7 @@ class Searcher:
         self.logger.debug(f'bing: {query}, n={num_results}')
         self.logger.debug(resp_data)
 
-        return list(map(operator.itemgetter('url'), resp_data['webPages']['value']))
+        return [item['url'] for item in resp_data['webPages']['value']]
 
     @staticmethod
     def html_to_visible_text(html):

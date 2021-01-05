@@ -2,7 +2,7 @@ import logging
 import re
 import string
 from time import time
-from typing import Match
+from typing import Dict, List, Match
 
 import nltk
 import colorama
@@ -28,7 +28,7 @@ class QuestionHandler:
     async def close(self):
         await self.searcher.close()
 
-    async def answer_question(self, question, original_choices):
+    async def answer_question(self, question: str, original_choices: List[str]):
         self.logger.info('Searching...')
         start_time = time()
 
@@ -50,7 +50,7 @@ class QuestionHandler:
         self.logger.debug(f'Keywords took {round(time() - keyword_start_time, 2)} seconds')
 
         search_start_time = time()
-        links = self.searcher.get_search_links(' '.join(question_keywords), self.num_sites)
+        links = await self.searcher.get_search_links(' '.join(question_keywords), self.num_sites)
         self.logger.debug(f'Web search took {round(time() - search_start_time, 2)} seconds')
         self.logger.debug(f'Found links: {links}')
 
@@ -61,16 +61,23 @@ class QuestionHandler:
         self.logger.debug(f'Fetching took {round(time() - fetch_start_time, 2)} seconds')
 
         # Step 3: Find best answer for all search methods
-        # TODO: async-ify the search methods
         post_process_start_time = time()
+        answers = []
         for search_method in self.search_methods_to_use:
-            self.logger.info(search_method(link_texts, choices, choice_groups, reverse),
-                             extra={'pre': colorama.Fore.BLUE})
+            answer = await search_method(link_texts, choices, choice_groups, reverse)
+            answers.append(answer)
+            if answer:
+                self.logger.info(answer, extra={'pre': colorama.Fore.BLUE})
+            else:
+                self.logger.info('Tie', extra={'pre': colorama.Fore.BLUE})
+
         self.logger.debug(f'Post-processing took {round(time() - post_process_start_time, 2)} seconds')
 
         self.logger.info(f'Search took {round(time() - start_time, 2)} seconds')
+        return answers
 
-    def __method1(self, texts, answers, answer_groups, reverse):
+    async def __method1(self, texts: List[str], answers: List[str],
+                        answer_groups: List[List[str]], reverse: bool) -> str:
         """
         Returns the answer with the best number of exact occurrences in texts.
         :param texts: List of webpages (strings) to analyze
@@ -89,7 +96,8 @@ class QuestionHandler:
         self.logger.info(counts)
         return self.__get_best_answer(counts, answer_groups, reverse)
 
-    def __method2(self, texts, answers, answer_groups, reverse):
+    async def __method2(self, texts: List[str], answers: List[str],
+                        answer_groups: List[List[str]], reverse: bool) -> str:
         """
         Returns the answers with the best number of occurrences of the answer's keywords in texts.
         :param texts: List of webpages (strings) to analyze
@@ -109,7 +117,7 @@ class QuestionHandler:
         self.logger.info(counts)
         return self.__get_best_answer(counts, answer_groups, reverse)
 
-    def find_keywords(self, text: str, sentences=True):
+    def find_keywords(self, text: str, sentences: bool = True) -> List[str]:
         """
         Returns the keywords from a string containing text, in the order they appear.
         Keywords:
@@ -156,35 +164,15 @@ class QuestionHandler:
         # TODO: handle plural and singular, see test_question_handler.py
         return keywords
 
-    def find_nouns(self, text, num_words, reverse=False):
-        tokens = nltk.word_tokenize(text)
-        tags = [tag for tag in self.perceptron_tagger.tag(tokens) if tag[1] != 'POS']
-
-        if not self.simplified_output:
-            self.logger.info(tags)
-
-        tags = tags[:num_words] if not reverse else tags[-num_words:]
-
-        nouns = []
-        consecutive_nouns = []
-
-        for tag in tags:
-            tag_type = tag[1]
-            word = tag[0]
-
-            if 'NN' not in tag_type and len(consecutive_nouns) > 0:
-                nouns.append(' '.join(consecutive_nouns))
-                consecutive_nouns = []
-            elif 'NN' in tag_type:
-                consecutive_nouns.append(word)
-
-        if len(consecutive_nouns) > 0:
-            nouns.append(' '.join(consecutive_nouns))
-
-        return nouns
-
     @staticmethod
-    def __get_best_answer(all_scores, choice_groups, reverse=False):
+    def __get_best_answer(all_scores: Dict, choice_groups: List[List[str]], reverse: bool = False):
+        """
+        Returns best answer based on scores for each choice and groups of choices.
+        :param all_scores: Dict mapping choices to scores
+        :param choice_groups: List of lists (groups) of choices
+        :param reverse: If True, return lowest scoring choice group, otherwise return highest
+        :return: String (first entry in group) of the group with the highest/lowest total score
+        """
         # Add scores of the same answer together due to two ways of removing punctuation
         scores = {choices[0]: sum(all_scores[choice] for choice in choices) for choices in choice_groups}
 

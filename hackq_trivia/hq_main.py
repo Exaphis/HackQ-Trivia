@@ -1,6 +1,7 @@
 import asyncio
 import json.decoder
 import time
+from typing import Optional
 from datetime import datetime
 import os
 
@@ -19,7 +20,12 @@ class BearerError(Exception):
     """Raise when bearer token is invalid/expired"""
 
 
-def next_available_name(base_name):
+def next_available_name(base_name: str) -> str:
+    """
+    Finds lowest available file name using .format() to insert numbers (starts at 1).
+    :param base_name: File name containing format placeholder ({})
+    :return: File name with lowest number inserted.
+    """
     num = 1
     curr_name = base_name.format(num)
     while os.path.exists(curr_name):
@@ -29,7 +35,7 @@ def next_available_name(base_name):
     return curr_name
 
 
-def init_root_logger():
+def init_root_logger() -> None:
     import os
 
     class LogFilterColor(logging.Filter):
@@ -65,7 +71,7 @@ def init_root_logger():
         logging.config.dictConfig(log_conf_dict)
 
 
-def download_nltk_resources():
+def download_nltk_resources() -> None:
     for resource in ('stopwords', 'averaged_perceptron_tagger', 'punkt'):
         nltk.download(resource, raise_on_error=True)
 
@@ -103,7 +109,7 @@ class HackQ:
         self.validate_bearer()
         self.logger.info('HackQ-Trivia initialized.\n', extra={'pre': colorama.Fore.GREEN})
 
-    def validate_bearer(self):
+    def validate_bearer(self) -> None:
         try:
             # verify and options args exist to support all versions of pyjwt
             # iat/exp is not checked by pyjwt if verify_signature is False
@@ -127,11 +133,11 @@ class HackQ:
             self.logger.info(f'    Issuing time: {iat_local.strftime("%Y-%m-%d %I:%M %p")}')
             self.logger.info(f'    Expiration time: {exp_local.strftime("%Y-%m-%d %I:%M %p")}')
 
-    async def __connect_show(self, uri):
+    async def __connect_show(self, uri) -> None:
         async with LiveShow(self.headers) as show:
             await show.connect(uri)
 
-    def connect(self):
+    def connect(self) -> None:
         while True:
             try:
                 websocket_uri = self.get_next_show_info()
@@ -144,7 +150,7 @@ class HackQ:
                 self.logger.error('Interrupted, exiting...')
                 break
 
-    def get_next_show_info(self):
+    def get_next_show_info(self) -> Optional[str]:
         """
         Gets info of upcoming shows from HQ, prints it out if ShowNextShowInfo is True
         :return: The show's WebSocket URI if it is live, else None
