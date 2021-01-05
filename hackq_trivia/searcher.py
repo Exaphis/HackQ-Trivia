@@ -6,7 +6,6 @@ from typing import Iterable, List
 import aiohttp
 import bs4
 import googleapiclient.discovery
-import requests
 from unidecode import unidecode
 
 from hackq_trivia.config import config
@@ -18,7 +17,7 @@ class InvalidSearchServiceError(Exception):
 
 class Searcher:
     HEADERS = {'User-Agent': 'HQbot'}
-    BING_ENDPOINT = 'https://api.cognitive.microsoft.com/bing/v7.0/search'
+    BING_ENDPOINT = 'https://api.bing.microsoft.com/v7.0/search'
 
     def __init__(self):
         self.timeout = config.getfloat('CONNECTION', 'Timeout')
@@ -67,6 +66,7 @@ class Searcher:
         return await self.search_func(query, num_results)
 
     async def get_google_links(self, query: str, num_results: int) -> List[str]:
+        # TODO: aiohttp instead of googleapiclient
         response = self.google_service.cse().list(q=query, cx=self.google_cse_id, num=num_results).execute()
         self.logger.debug(f'google: {query}, n={num_results}')
         self.logger.debug(response)
@@ -74,15 +74,18 @@ class Searcher:
         return [item['link'] for item in response['items']]
 
     async def get_bing_links(self, query: str, num_results: int) -> List[str]:
-        # could be using aiohttp here...
-        search_params = {'q': query, 'count': num_results}
-        resp = requests.get(self.BING_ENDPOINT, headers=self.bing_headers, params=search_params)
-        resp_data = resp.json()
+        async with aiohttp.ClientSession(headers=self.bing_headers) as session:
+            # why does Bing consistently deliver 1 fewer result than requested?
+            search_params = {'q': query, 'count': num_results + 1}
 
-        if resp.status_code != requests.codes.ok:
-            logging.error(f'Bing search failed with status code {resp.status_code}')
-            logging.error(resp_data)
-            return []
+            async with session.get(self.BING_ENDPOINT, params=search_params) as resp:
+                resp_status = resp.status
+                resp_data = await resp.json()
+
+                if resp_status != 200:
+                    logging.error(f'Bing search failed with status code {resp_status}')
+                    logging.error(resp_data)
+                    return []
 
         self.logger.debug(f'bing: {query}, n={num_results}')
         self.logger.debug(resp_data)

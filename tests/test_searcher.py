@@ -1,4 +1,3 @@
-import asyncio
 import json
 import unittest
 from urllib.parse import urlparse
