@@ -3,7 +3,6 @@ requests
 aiohttp
 bs4
 nltk
-google-api-python-client
 unidecode
 aiodns
 cchardet

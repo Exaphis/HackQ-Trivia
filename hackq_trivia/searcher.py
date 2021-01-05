@@ -5,7 +5,6 @@ from typing import Iterable, List
 
 import aiohttp
 import bs4
-import googleapiclient.discovery
 from unidecode import unidecode
 
 from hackq_trivia.config import config
@@ -18,8 +17,10 @@ class InvalidSearchServiceError(Exception):
 class Searcher:
     HEADERS = {'User-Agent': 'HQbot'}
     BING_ENDPOINT = 'https://api.bing.microsoft.com/v7.0/search'
+    GOOGLE_ENDPOINT = 'https://www.googleapis.com/customsearch/v1'
 
     def __init__(self):
+        # TODO: persistent aiohttp ClientSession
         self.timeout = config.getfloat('CONNECTION', 'Timeout')
         self.search_service = config.get('SEARCH', 'Service')
 
@@ -27,8 +28,7 @@ class Searcher:
         self.bing_headers = {'Ocp-Apim-Subscription-Key': bing_api_key}
 
         self.google_cse_id = config.get('SEARCH', 'GoogleCseId')
-        google_api_key = config.get('SEARCH', 'GoogleApiKey')
-        self.google_service = googleapiclient.discovery.build('customsearch', 'v1', developerKey=google_api_key)
+        self.google_api_key = config.get('SEARCH', 'GoogleApiKey')
 
         if self.search_service == 'Bing':
             self.search_func = self.get_bing_links
@@ -66,12 +66,25 @@ class Searcher:
         return await self.search_func(query, num_results)
 
     async def get_google_links(self, query: str, num_results: int) -> List[str]:
-        # TODO: aiohttp instead of googleapiclient
-        response = self.google_service.cse().list(q=query, cx=self.google_cse_id, num=num_results).execute()
-        self.logger.debug(f'google: {query}, n={num_results}')
-        self.logger.debug(response)
+        async with aiohttp.ClientSession() as session:
+            search_params = {'key': self.google_api_key,
+                             'cx': self.google_cse_id,
+                             'q': query,
+                             'num': num_results}
 
-        return [item['link'] for item in response['items']]
+            async with session.get(self.GOOGLE_ENDPOINT, params=search_params) as resp:
+                resp_status = resp.status
+                resp_data = await resp.json()
+
+                if resp_status != 200:
+                    logging.error(f'Google search failed with status code {resp_status}')
+                    logging.error(resp_data)
+                    return []
+
+        self.logger.debug(f'google: {query}, n={num_results}')
+        self.logger.debug(resp_data)
+
+        return [item['link'] for item in resp_data['items']]
 
     async def get_bing_links(self, query: str, num_results: int) -> List[str]:
         async with aiohttp.ClientSession(headers=self.bing_headers) as session:
