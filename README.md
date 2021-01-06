@@ -1,5 +1,8 @@
-# HackQ-Trivia
-Yet another HQ Trivia bot, in Python. Automatically receives HQ Trivia questions without OCR and answers them.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Exaphis/HackQ-Trivia/master/resources/hackq.png" width="400"/>
+</p>
+
+HackQ-Trivia is a Python HQ Trivia bot. It receives HQ Trivia questions through their WebSocket connection and answers the questions automatically.
 
 ## Getting Started
 Requires Python 3.7 or above.
