@@ -13,9 +13,9 @@ Requires Python 3.7 or above.
 ### Code and dependencies
 
 ```console
-git clone https://github.com/Exaphis/HackQ-Trivia.git
-cd HackQ-Trivia
-pip install -r requirements.txt
+$ git clone https://github.com/Exaphis/HackQ-Trivia.git
+$ cd HackQ-Trivia
+$ pip install -r requirements.txt
 ```
 
 ### Bearer token
@@ -25,7 +25,7 @@ The easiest way to find your bearer token is to run `bearer_finder.py`.
 Make sure you are in the `HackQ-Trivia` folder, not `hackq_trivia`.
 
 ```console
-python3 -m hackq_trivia.bearer_finder
+$ python3 -m hackq_trivia.bearer_finder
 ```
 
 Alternatively, it can be found by sniffing the traffic
@@ -82,7 +82,7 @@ additional requests cost $5 per 1000 queries.
 Make sure you are in the `HackQ-Trivia` folder, not `hackq_trivia`.
 
 ```console
-python3 -m hackq_trivia.hq_main
+$ python3 -m hackq_trivia.hq_main
 ```
 
 ## Screenshots
