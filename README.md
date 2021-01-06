@@ -1,5 +1,5 @@
 # HackQ-Trivia
-Yet another HQ trivia bot, in Python. Automatically scrapes HQ Trivia questions without OCR and answers them.
+Yet another HQ Trivia bot, in Python. Automatically receives HQ Trivia questions without OCR and answers them.
 
 ## Getting Started
 Requires Python 3.7 or above.
@@ -24,7 +24,7 @@ pip install -r requirements.txt
 ```
 #### Bearer token
 
-The easiest way to find you bearer token is to run `bearer_finder.py`.
+The easiest way to find your bearer token is to run `bearer_finder.py`.
 
 Make sure you are in the `HackQ-Trivia` folder, not `hackq_trivia`.
 
@@ -77,4 +77,4 @@ python3 -m hackq_trivia.hq_main
 ```
 
 ### Screenshots
-![](https://raw.githubusercontent.com/Exaphis/HackQ-Trivia/master/screenshots/1.png)
+![](https://raw.githubusercontent.com/Exaphis/HackQ-Trivia/master/resources/1.png)
