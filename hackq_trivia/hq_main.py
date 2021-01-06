@@ -72,8 +72,8 @@ def init_root_logger() -> None:
 
 
 def download_nltk_resources() -> None:
-    for resource in ('stopwords', 'averaged_perceptron_tagger', 'punkt'):
-        nltk.download(resource, raise_on_error=True)
+    nltk.download('stopwords', raise_on_error=True)
+    nltk.download('punkt', raise_on_error=True)
 
 
 class HackQ:

@@ -17,8 +17,7 @@ class QuestionHandler:
         self.num_sites = config.getint('SEARCH', 'NumSitesToSearch')
 
         self.searcher = Searcher()
-        self.perceptron_tagger = nltk.tag.perceptron.PerceptronTagger()
-        self.search_methods_to_use = [self.__method1, self.__method2]
+        self.search_methods_to_use = [self._method1, self._method2]
         self.logger = logging.getLogger(__name__)
 
         self.stopwords = set(nltk.corpus.stopwords.words('english')) - {'most', 'least'}
@@ -76,8 +75,8 @@ class QuestionHandler:
         self.logger.info(f'Search took {round(time() - start_time, 2)} seconds')
         return answers
 
-    async def __method1(self, texts: List[str], answers: List[str],
-                        answer_groups: List[List[str]], reverse: bool) -> str:
+    async def _method1(self, texts: List[str], answers: List[str],
+                       answer_groups: List[List[str]], reverse: bool) -> str:
         """
         Returns the answer with the best number of exact occurrences in texts.
         :param texts: List of webpages (strings) to analyze
@@ -96,8 +95,8 @@ class QuestionHandler:
         self.logger.info(counts)
         return self.__get_best_answer(counts, answer_groups, reverse)
 
-    async def __method2(self, texts: List[str], answers: List[str],
-                        answer_groups: List[List[str]], reverse: bool) -> str:
+    async def _method2(self, texts: List[str], answers: List[str],
+                       answer_groups: List[List[str]], reverse: bool) -> str:
         """
         Returns the answers with the best number of occurrences of the answer's keywords in texts.
         :param texts: List of webpages (strings) to analyze

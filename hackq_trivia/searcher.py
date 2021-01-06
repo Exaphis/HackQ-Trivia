@@ -5,7 +5,7 @@ from typing import Iterable, List
 
 import aiohttp
 import bs4
-from unidecode import unidecode
+from anyascii import anyascii
 
 from hackq_trivia.config import config
 
@@ -20,7 +20,6 @@ class Searcher:
     GOOGLE_ENDPOINT = 'https://www.googleapis.com/customsearch/v1'
 
     def __init__(self):
-        # TODO: persistent aiohttp ClientSession
         self.timeout = config.getfloat('CONNECTION', 'Timeout')
         self.search_service = config.get('SEARCH', 'Service')
 
@@ -30,6 +29,11 @@ class Searcher:
         self.google_cse_id = config.get('SEARCH', 'GoogleCseId')
         self.google_api_key = config.get('SEARCH', 'GoogleApiKey')
 
+        # don't use default headers for Bing search so searcher tests
+        # can run get_bing_links/get_google_links on its own
+        # without depending on search_service being set correctly
+        self.search_session = aiohttp.ClientSession()
+
         if self.search_service == 'Bing':
             self.search_func = self.get_bing_links
         elif self.search_service == 'Google':
@@ -38,12 +42,16 @@ class Searcher:
             raise InvalidSearchServiceError(f'Search service type {self.search_service} was not recognized.')
 
         client_timeout = aiohttp.ClientTimeout(total=self.timeout)
-        self.session = aiohttp.ClientSession(headers=Searcher.HEADERS, timeout=client_timeout)
+        self.fetch_session = aiohttp.ClientSession(headers=Searcher.HEADERS, timeout=client_timeout)
         self.logger = logging.getLogger(__name__)
+
+    async def close(self) -> None:
+        await self.fetch_session.close()
+        await self.search_session.close()
 
     async def fetch(self, url: str) -> str:
         try:
-            async with self.session.get(url, timeout=self.timeout) as response:
+            async with self.fetch_session.get(url, timeout=self.timeout) as response:
                 return await response.text()
         except asyncio.TimeoutError:
             self.logger.error(f'Server timeout to {url}')
@@ -59,27 +67,23 @@ class Searcher:
         responses = await asyncio.gather(*coroutines)
         return responses
 
-    async def close(self) -> None:
-        await self.session.close()
-
     async def get_search_links(self, query: str, num_results: int) -> List[str]:
         return await self.search_func(query, num_results)
 
     async def get_google_links(self, query: str, num_results: int) -> List[str]:
-        async with aiohttp.ClientSession() as session:
-            search_params = {'key': self.google_api_key,
-                             'cx': self.google_cse_id,
-                             'q': query,
-                             'num': num_results}
+        search_params = {'key': self.google_api_key,
+                         'cx': self.google_cse_id,
+                         'q': query,
+                         'num': num_results}
 
-            async with session.get(self.GOOGLE_ENDPOINT, params=search_params) as resp:
-                resp_status = resp.status
-                resp_data = await resp.json()
+        async with self.search_session.get(self.GOOGLE_ENDPOINT, params=search_params) as resp:
+            resp_status = resp.status
+            resp_data = await resp.json()
 
-                if resp_status != 200:
-                    logging.error(f'Google search failed with status code {resp_status}')
-                    logging.error(resp_data)
-                    return []
+            if resp_status != 200:
+                logging.error(f'Google search failed with status code {resp_status}')
+                logging.error(resp_data)
+                return []
 
         self.logger.debug(f'google: {query}, n={num_results}')
         self.logger.debug(resp_data)
@@ -87,18 +91,18 @@ class Searcher:
         return [item['link'] for item in resp_data['items']]
 
     async def get_bing_links(self, query: str, num_results: int) -> List[str]:
-        async with aiohttp.ClientSession(headers=self.bing_headers) as session:
-            # why does Bing consistently deliver 1 fewer result than requested?
-            search_params = {'q': query, 'count': num_results + 1}
+        # why does Bing consistently deliver 1 fewer result than requested?
+        search_params = {'q': query, 'count': num_results + 1}
 
-            async with session.get(self.BING_ENDPOINT, params=search_params) as resp:
-                resp_status = resp.status
-                resp_data = await resp.json()
+        async with self.search_session.get(self.BING_ENDPOINT, params=search_params,
+                                           headers=self.bing_headers) as resp:
+            resp_status = resp.status
+            resp_data = await resp.json()
 
-                if resp_status != 200:
-                    logging.error(f'Bing search failed with status code {resp_status}')
-                    logging.error(resp_data)
-                    return []
+            if resp_status != 200:
+                logging.error(f'Bing search failed with status code {resp_status}')
+                logging.error(resp_data)
+                return []
 
         self.logger.debug(f'bing: {query}, n={num_results}')
         self.logger.debug(resp_data)
@@ -111,4 +115,4 @@ class Searcher:
         for s in soup(['style', 'script', '[document]', 'head', 'title']):
             s.extract()
 
-        return unidecode(unescape(soup.get_text())).lower()
+        return anyascii(unescape(soup.get_text())).lower()

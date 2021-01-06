@@ -1,10 +1,7 @@
 colorama
 requests
 aiohttp
-bs4
+beautifulsoup4
 nltk
-unidecode
-aiodns
-cchardet
+anyascii
 pyjwt
-oauth2client<4.0.0

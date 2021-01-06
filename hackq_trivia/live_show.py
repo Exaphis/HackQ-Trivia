@@ -4,7 +4,7 @@ from typing import Dict
 
 import aiohttp
 import colorama
-from unidecode import unidecode
+from anyascii import anyascii
 
 from hackq_trivia.config import config
 from hackq_trivia.question_handler import QuestionHandler
@@ -72,8 +72,8 @@ class LiveShow:
             self.logger.info(f'{message["metadata"]["username"]}: {message["metadata"]["message"]}')
 
         elif message_type == 'question':
-            question = unidecode(message['question'])
-            choices = [unidecode(choice['text']) for choice in message['answers']]
+            question = anyascii(message['question'])
+            choices = [anyascii(choice['text']) for choice in message['answers']]
 
             self.logger.info('\n' * 5)
             self.logger.info(f'Question {message["questionNumber"]} out of {message["questionCount"]}')
@@ -85,11 +85,11 @@ class LiveShow:
             self.block_chat = True
 
         elif message_type == 'questionSummary' and self.show_question_summary:
-            question = unidecode(message['question'])
+            question = anyascii(message['question'])
             self.logger.info(f'Question summary: {question}', extra={'pre': colorama.Fore.BLUE})
 
             for answer in message['answerCounts']:
-                ans_str = unidecode(answer['answer'])
+                ans_str = anyascii(answer['answer'])
 
                 self.logger.info(f'{ans_str}:{answer["count"]}:{answer["correct"]}',
                                  extra={'pre': colorama.Fore.GREEN if answer['correct'] else colorama.Fore.RED})
