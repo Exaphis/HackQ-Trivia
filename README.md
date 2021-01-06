@@ -2,60 +2,63 @@
   <img src="https://raw.githubusercontent.com/Exaphis/HackQ-Trivia/master/resources/hackq.png" width="400"/>
 </p>
 
-HackQ-Trivia is a Python HQ Trivia bot. It receives HQ Trivia questions through their WebSocket connection and answers the questions automatically.
+HackQ-Trivia is a Python HQ Trivia bot.
+It receives HQ Trivia questions through their WebSocket
+connection and answers the questions automatically.
 
-## Getting Started
-Requires Python 3.7 or above.
-### Dependencies
-```
-colorama
-requests
-aiohttp
-bs4
-nltk
-google-api-python-client
-unidecode
-aiodns
-cchardet
-pyjwt
-```
 ## Installation
-```
+
+Requires Python 3.7 or above.
+
+### Code and dependencies
+
+```console
 git clone https://github.com/Exaphis/HackQ-Trivia.git
 cd HackQ-Trivia
 pip install -r requirements.txt
 ```
-#### Bearer token
+
+### Bearer token
 
 The easiest way to find your bearer token is to run `bearer_finder.py`.
 
 Make sure you are in the `HackQ-Trivia` folder, not `hackq_trivia`.
 
-```
+```console
 python3 -m hackq_trivia.bearer_finder
 ```
 
-Alternatively, it can be found by sniffing the traffic on your phone. The bearer token is easily found on an emulator, since they are easy to root and most use Android versions without certificate pinning. Popular tools used to obtain bearer tokens are Charles, Fiddler, and Burp Suite.
- 
-Paste your bearer token after `Bearer` in `hq_config.conf`, all within one line.
+Alternatively, it can be found by sniffing the traffic
+on your phone. The bearer token is easily found on an
+emulator, since they are easy to root and most use Android
+versions without certificate pinning. Popular tools used
+to obtain bearer tokens are Charles, Fiddler, and Burp Suite.
+
+Paste your bearer token after `Bearer` in `hq_config.conf`,
+all within one line.
 
 ### Search APIs
 
 HackQ-Trivia can utilize either Google or Bing search APIs.
 
 The search settings are under the `[SEARCH]` section in `hq_config.conf`.
+
 * To use the Google Custom Search Engine API, set `Service = Google`.
 * To use the Bing Web Search API, set `Service = Bing`.
 
 ### Google Search
+
 #### Google Custom Search Engine API Key
-CAUTION — First 100 queries per day are free, additional requests cost $5 per 1000 queries.
-* Obtain an API key from https://developers.google.com/custom-search/v1/overview
+
+CAUTION — First 100 queries per day are free,
+additional requests cost $5 per 1000 queries.
+
+* Obtain an API key from <https://developers.google.com/custom-search/v1/overview>
 * Paste it after `GoogleApiKey` in `hq_config.conf`
 
-
 #### Google Custom Search Engine ID
-* Create a new custom search engine at https://cse.google.com/cse/
+
+* Create a new custom search engine at <https://cse.google.com/cse/>
 * Name your custom search engine and type in any valid URL in `Sites to search`
 * Click `Control Panel`
 * Enable `Search the entire web`
@@ -64,7 +67,8 @@ CAUTION — First 100 queries per day are free, additional requests cost $5 per 
 * Paste it after `GoogleCseId` in `hq_config.conf`
 
 ### Bing Search
-* Create a free account at https://azure.microsoft.com/
+
+* Create a free account at <https://azure.microsoft.com/>
 * Enter the Azure portal
 * Create a `Bing Search` resource from the Marketplace
 * Wait for setup...
@@ -73,11 +77,14 @@ CAUTION — First 100 queries per day are free, additional requests cost $5 per 
 * Copy `Key 1` or `Key 2` to clipboard
 * Paste it after `BingApiKey` in `hq_config.conf`
 
-### Usage
+## Usage
+
 Make sure you are in the `HackQ-Trivia` folder, not `hackq_trivia`.
-```
+
+```console
 python3 -m hackq_trivia.hq_main
 ```
 
-### Screenshots
-![](https://raw.githubusercontent.com/Exaphis/HackQ-Trivia/master/resources/1.png)
+## Screenshots
+
+![Screenshot when HQ is not live](https://raw.githubusercontent.com/Exaphis/HackQ-Trivia/master/resources/1.png)
