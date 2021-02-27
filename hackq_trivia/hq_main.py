@@ -111,10 +111,7 @@ class HackQ:
 
     def validate_bearer(self) -> None:
         try:
-            # verify and options args exist to support all versions of pyjwt
-            # iat/exp is not checked by pyjwt if verify_signature is False
-            bearer_info = jwt.decode(self.bearer, verify=False,
-                                     options={'verify_signature': False})
+            bearer_info = jwt.decode(self.bearer, options={'verify_signature': False})
         except jwt.exceptions.DecodeError as e:
             raise BearerError('Bearer token decode failed. Please check your settings.ini.') from e
 

@@ -1,7 +1,7 @@
-colorama
-requests
-aiohttp
-beautifulsoup4
-nltk
-anyascii
-pyjwt
+colorama~=0.4.4
+requests~=2.25.1
+aiohttp~=3.7.4
+beautifulsoup4~=4.9.3
+nltk~=3.5
+anyascii~=0.1.7
+pyjwt~=2.0.1
