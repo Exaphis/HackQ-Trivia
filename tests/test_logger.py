@@ -10,8 +10,8 @@ class MyTestCase(unittest.TestCase):
         self.logger = logging.getLogger(__name__)
 
     def test_emojis(self):
-        self.logger.info('👁 👃🏾👄👁')
+        self.logger.info("👁 👃🏾👄👁")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

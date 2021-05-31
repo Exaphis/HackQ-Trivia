@@ -14,11 +14,13 @@ async def test():
     #                          ['Basketball', 'Super Mario Kart', 'Uno'])
 
     # for is removed as a stopword
-    await qh.answer_question("What do NEITHER of the N's in CNN stand for?",
-                             ['News', 'Netflix', 'Network'])
+    await qh.answer_question(
+        "What do NEITHER of the N's in CNN stand for?", ["News", "Netflix", "Network"]
+    )
     await qh.close()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     init_root_logger()
 
     asyncio.run(test())
